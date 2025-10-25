@@ -1,7 +1,7 @@
 // Admin configuration - Sử dụng environment variables để bảo mật
 export const ADMIN_CONFIG = {
-  // Password từ environment variable hoặc default (chỉ dùng cho development)
-  PASSWORD: process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'development' ? 'admin123' : ''),
+  // Password từ environment variable hoặc default
+  PASSWORD: process.env.ADMIN_PASSWORD || 'admin123',
   
   // Có thể thêm các cấu hình khác
   SESSION_TIMEOUT: 24 * 60 * 60 * 1000, // 24 hours
