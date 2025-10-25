@@ -1,0 +1,119 @@
+{
+    "players": [
+        {
+            "name": "Liêm",
+            "rank": 23
+        },
+        {
+            "name": "F88",
+            "rank": 22
+        },
+        {
+            "name": "YB 1999",
+            "rank": 21
+        },
+        {
+            "name": "Pi",
+            "rank": 20
+        },
+        {
+            "name": "Dánh Đông dẹp bắc",
+            "rank": 19
+        },
+        {
+            "name": "Pheo",
+            "rank": 18
+        },
+        {
+            "name": "Trung con",
+            "rank": 17
+        },
+        {
+            "name": "Thầy Hiệu Trưởng",
+            "rank": 16
+        },
+        {
+            "name": "Cụ già",
+            "rank": 15
+        },
+        {
+            "name": "Dx Tá",
+            "rank": 14
+        },
+        {
+            "name": "Đinh Xuân Hào",
+            "rank": 13
+        },
+        {
+            "name": "Hoàng Huy",
+            "rank": 12
+        },
+        {
+            "name": "Thành Phạm",
+            "rank": 11
+        },
+        {
+            "name": "Việt Béo",
+            "rank": 10
+        },
+        {
+            "name": "Bảnh",
+            "rank": 9
+        },
+        {
+            "name": "Lưu Văn Sỹ",
+            "rank": 8
+        },
+        {
+            "name": "Hiệp",
+            "rank": 7
+        },
+        {
+            "name": "Bé bom",
+            "rank": 6
+        },
+        {
+            "name": "Ngô Bảo Long",
+            "rank": 6
+        },
+        {
+            "name": "Tũn",
+            "rank": 6
+        },
+        {
+            "name": "Giáp Nguyễn",
+            "rank": 6
+        },
+        {
+            "name": "Tuấn Tuấn",
+            "rank": 6
+        },
+        {
+            "name": "Thang Tony",
+            "rank": 6
+        },
+        {
+            "name": "Phong Lâm",
+            "rank": 5
+        },
+        {
+            "name": "Koi",
+            "rank": 4
+        },
+        {
+            "name": "Kim Chung",
+            "rank": 3
+        },
+        {
+            "name": "Máy tính tất thắng",
+            "rank": 2
+        },
+        {
+            "name": "Kiếp",
+            "rank": 1
+        }
+    ],
+    "exportDate": "2024-01-01T00:00:00.000Z",
+    "totalPlayers": 30,
+    "teamCount": 7
+}

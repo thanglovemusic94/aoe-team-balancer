@@ -16,8 +16,32 @@
     <div class="mb-2 p-2 bg-yellow-100 rounded text-xs">
       Debug: players.length = {{ players.length }}, valid players = {{ playerCount }}
     </div>
+
+    <!-- Thông báo khi chưa có người chơi -->
+    <div v-if="players.length === 0" class="mb-4 p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
+      <div class="text-gray-600 text-lg font-semibold mb-2">
+        📝 Chưa có người chơi nào
+      </div>
+      <p class="text-gray-500 mb-4">
+        Hãy thêm người chơi bằng cách click các nút bên dưới hoặc import từ file JSON.
+      </p>
+      <div class="flex justify-center space-x-2">
+        <button
+          @click="addMorePlayers(4)"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          ➕ Thêm 4 người
+        </button>
+        <button
+          @click="importFromJSON"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          📥 Import JSON
+        </button>
+      </div>
+    </div>
     
-    <div class="overflow-x-auto">
+    <div v-else class="overflow-x-auto">
       <table class="w-full border-collapse bg-white rounded-lg shadow-sm">
         <thead>
           <tr class="bg-gray-100">
@@ -160,6 +184,30 @@
         </button>
         <span class="text-sm text-gray-600 ml-2">(Tổng: {{ players.length }} ô)</span>
       </div>
+
+      <!-- Nút Export/Import -->
+      <div class="flex flex-wrap gap-2 items-center">
+        <span class="text-sm font-medium text-gray-700">Dữ liệu:</span>
+        <button
+          @click="exportToJSON"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          📤 Export JSON
+        </button>
+        <button
+          @click="importFromJSON"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          📥 Import JSON
+        </button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept=".json"
+          @change="handleFileImport"
+          class="hidden"
+        />
+      </div>
     </div>
     
     <div v-if="error" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -187,13 +235,12 @@ const emit = defineEmits(['players-submitted', 'players-updated'])
 const players = ref([])
 const error = ref('')
 const success = ref('')
+const fileInput = ref(null)
 
-// Initialize players array with initial capacity of 28
+// Initialize players array (empty by default)
 const initializePlayers = () => {
   players.value = []
-  for (let i = 0; i < 28; i++) {
-    players.value.push({ name: '', rank: null })
-  }
+  // Không tạo sẵn 28 ô trống, chỉ tạo khi cần thiết
 }
 
 // Add more players (4, 8, 16, etc.)
@@ -232,6 +279,90 @@ const sortPlayersByRank = () => {
     return 0
   })
   success.value = '🔄 Đã sắp xếp danh sách theo điểm từ cao xuống thấp!'
+}
+
+// Export data to JSON
+const exportToJSON = () => {
+  const validPlayers = players.value.filter(p => p.name && p.rank)
+  
+  if (validPlayers.length === 0) {
+    error.value = 'Không có dữ liệu để export!'
+    return
+  }
+
+  const dataToExport = {
+    players: validPlayers,
+    exportDate: new Date().toISOString(),
+    totalPlayers: validPlayers.length,
+    teamCount: Math.floor(validPlayers.length / 4)
+  }
+
+  const jsonString = JSON.stringify(dataToExport, null, 2)
+  const blob = new Blob([jsonString], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `aoe-players-${new Date().toISOString().split('T')[0]}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  
+  success.value = `📤 Đã export ${validPlayers.length} người chơi ra file JSON!`
+  error.value = ''
+}
+
+// Import data from JSON
+const importFromJSON = () => {
+  fileInput.value.click()
+}
+
+// Handle file import
+const handleFileImport = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result)
+      
+      if (!data.players || !Array.isArray(data.players)) {
+        throw new Error('File JSON không hợp lệ!')
+      }
+
+      // Validate players data
+      const validPlayers = data.players.filter(p => p.name && p.rank && 
+        typeof p.name === 'string' && 
+        typeof p.rank === 'number' && 
+        p.rank >= 1 && p.rank <= 23)
+
+      if (validPlayers.length === 0) {
+        throw new Error('Không có dữ liệu người chơi hợp lệ!')
+      }
+
+      // Clear current data and load new data
+      players.value = validPlayers
+      
+      // Emit update
+      emit('players-updated', validPlayers)
+      
+      success.value = `📥 Đã import ${validPlayers.length} người chơi từ file JSON!`
+      error.value = ''
+      
+      console.log('✅ Imported data:', data)
+      
+    } catch (err) {
+      error.value = `Lỗi import file: ${err.message}`
+      success.value = ''
+    }
+  }
+  
+  reader.readAsText(file)
+  
+  // Reset file input
+  event.target.value = ''
 }
 
 // Load existing players if available
@@ -279,9 +410,6 @@ const playerCount = computed(() => {
 
 const clearAll = () => {
   players.value = []
-  for (let i = 0; i < 28; i++) {
-    players.value.push({ name: '', rank: null })
-  }
   error.value = ''
   success.value = ''
 }
@@ -298,11 +426,11 @@ const generateRandomPlayers = () => {
     'Máy tính tất thắng', 'Lưu Văn Sỹ', 'Phong Lâm', 'Tuấn Tuấn', 'Thang Tony', 'Koi'
   ]
   
-  // Tạo 28 người chơi ngẫu nhiên
+  // Tạo 32 người chơi ngẫu nhiên (8 teams)
   const randomPlayers = []
   const usedNames = new Set()
   
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 32; i++) {
     let name
     do {
       name = names[Math.floor(Math.random() * names.length)]
@@ -310,12 +438,12 @@ const generateRandomPlayers = () => {
     
     usedNames.add(name)
     
-    // Phân bổ điểm theo tỷ lệ: 7 người A (17-23), 10 người B (7-16), 11 người C (1-6)
+    // Phân bổ điểm theo tỷ lệ: 8 người A (17-23), 12 người B (7-16), 12 người C (1-6)
     let rank
-    if (i < 7) {
+    if (i < 8) {
       // Nhóm A: 17-23 điểm
       rank = Math.floor(Math.random() * 7) + 17
-    } else if (i < 17) {
+    } else if (i < 20) {
       // Nhóm B: 7-16 điểm
       rank = Math.floor(Math.random() * 10) + 7
     } else {
@@ -333,7 +461,7 @@ const generateRandomPlayers = () => {
   }
   
   players.value = randomPlayers
-  success.value = '🎲 Đã tạo danh sách ngẫu nhiên 28 người chơi!'
+  success.value = '🎲 Đã tạo danh sách ngẫu nhiên 32 người chơi!'
   
   // Emit update manually
   const validPlayers = players.value.filter(p => p.name && p.rank)
