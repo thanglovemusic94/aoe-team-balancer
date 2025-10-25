@@ -687,7 +687,7 @@ useHead({
     { property: 'og:url', content: 'https://aoe-three.vercel.app/' },
     { property: 'og:title', content: '🎮 AOE Team Balancer - Chia Team Cân Bằng' },
     { property: 'og:description', content: 'Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires với thuật toán tiên tiến. Tạo teams công bằng và thú vị!' },
-    { property: 'og:image', content: 'https://aoe-three.vercel.app/og-image.png' },
+    { property: 'og:image', content: 'https://aoe-three.vercel.app/og-image.svg' },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
     { property: 'og:site_name', content: 'AOE Team Balancer' },
@@ -697,11 +697,16 @@ useHead({
     { name: 'twitter:url', content: 'https://aoe-three.vercel.app/' },
     { name: 'twitter:title', content: '🎮 AOE Team Balancer - Chia Team Cân Bằng' },
     { name: 'twitter:description', content: 'Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires với thuật toán tiên tiến. Tạo teams công bằng và thú vị!' },
-    { name: 'twitter:image', content: 'https://aoe-three.vercel.app/og-image.png' },
+    { name: 'twitter:image', content: 'https://aoe-three.vercel.app/og-image.svg' },
     
     // Additional meta
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { name: 'theme-color', content: '#3B82F6' }
+    { name: 'theme-color', content: '#3B82F6' },
+    
+    // Zalo specific
+    { property: 'og:image:type', content: 'image/svg+xml' },
+    { property: 'og:image:alt', content: 'AOE Team Balancer - Chia Team Cân Bằng' },
+    { name: 'robots', content: 'index, follow' }
   ],
   script: [
     {
