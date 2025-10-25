@@ -496,18 +496,18 @@ const fillRandomPlayer = (index) => {
 // Lấy class cho badge category
 const getRankBadgeClass = (rank) => {
   if (!rank) return 'bg-gray-100 text-gray-700 border border-gray-300'
-  if (rank >= 17) return 'bg-red-100 text-red-700 border border-red-300'
-  if (rank >= 7) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300'
+  if (rank >= 14) return 'bg-red-100 text-red-700 border border-red-300' // Trụ Cột: 14-17 điểm
+  if (rank >= 8) return 'bg-yellow-100 text-yellow-700 border border-yellow-300' // Trung Bình: 8-13 điểm
+  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300' // Hỗ Trợ: 1-7 điểm
   return 'bg-gray-100 text-gray-700 border border-gray-300'
 }
 
 // Lấy category của rank
 const getRankCategory = (rank) => {
   if (!rank) return 'N/A'
-  if (rank >= 17) return 'Trụ Cột'
-  if (rank >= 7) return 'Trung Bình'
-  if (rank >= 1) return 'Hỗ Trợ'
+  if (rank >= 14) return 'Trụ Cột' // 14-17 điểm
+  if (rank >= 8) return 'Trung Bình' // 8-13 điểm
+  if (rank >= 1) return 'Hỗ Trợ' // 1-7 điểm
   return 'N/A'
 }
 
@@ -516,9 +516,9 @@ const getCategoryCount = (category) => {
   return players.value.filter(player => {
     if (!player.rank) return false
     switch (category) {
-      case 'A': return player.rank >= 17
-      case 'B': return player.rank >= 7 && player.rank < 17
-      case 'C': return player.rank >= 1 && player.rank < 7
+      case 'A': return player.rank >= 14 // Trụ Cột: 14-17 điểm
+      case 'B': return player.rank >= 8 && player.rank < 14 // Trung Bình: 8-13 điểm
+      case 'C': return player.rank >= 1 && player.rank < 8 // Hỗ Trợ: 1-7 điểm
       default: return false
     }
   }).length

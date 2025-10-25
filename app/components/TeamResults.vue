@@ -178,33 +178,33 @@ const getTeamPointsClass = (points) => {
 }
 
 const getPlayerRankClass = (rank) => {
-  if (rank >= 17) return 'bg-red-100 text-red-700'
-  if (rank >= 7) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-green-100 text-green-700'
+  if (rank >= 14) return 'bg-red-100 text-red-700' // Trụ Cột: 14-17 điểm
+  if (rank >= 8) return 'bg-yellow-100 text-yellow-700' // Trung Bình: 8-13 điểm
+  return 'bg-green-100 text-green-700' // Hỗ Trợ: 1-7 điểm
 }
 
 const getRankBadgeClass = (rank) => {
-  if (rank >= 17) return 'bg-red-100 text-red-700 border border-red-300'
-  if (rank >= 7) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300'
+  if (rank >= 14) return 'bg-red-100 text-red-700 border border-red-300' // Trụ Cột: 14-17 điểm
+  if (rank >= 8) return 'bg-yellow-100 text-yellow-700 border border-yellow-300' // Trung Bình: 8-13 điểm
+  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300' // Hỗ Trợ: 1-7 điểm
   return 'bg-gray-100 text-gray-700 border border-gray-300'
 }
 
 const getRankCategory = (rank) => {
-  if (rank >= 17) return 'Trụ Cột'
-  if (rank >= 7) return 'Trung Bình'
-  if (rank >= 1) return 'Hỗ Trợ'
+  if (rank >= 14) return 'Trụ Cột' // 14-17 điểm
+  if (rank >= 8) return 'Trung Bình' // 8-13 điểm
+  if (rank >= 1) return 'Hỗ Trợ' // 1-7 điểm
   return 'N/A'
 }
 
 const getPlayersByCategory = (players, category) => {
   switch (category) {
     case 'A':
-      return players.filter(p => p.rank >= 17)
+      return players.filter(p => p.rank >= 14) // Trụ Cột: 14-17 điểm
     case 'B':
-      return players.filter(p => p.rank >= 7 && p.rank < 17)
+      return players.filter(p => p.rank >= 8 && p.rank < 14) // Trung Bình: 8-13 điểm
     case 'C':
-      return players.filter(p => p.rank >= 1 && p.rank < 7)
+      return players.filter(p => p.rank >= 1 && p.rank < 8) // Hỗ Trợ: 1-7 điểm
     default:
       return []
   }
@@ -213,13 +213,13 @@ const getPlayersByCategory = (players, category) => {
 // Sắp xếp players trong team: Trụ Cột → Trung Bình → Hỗ Trợ
 const getSortedPlayersForTeam = (players) => {
   return [...players].sort((a, b) => {
-    // Trụ Cột (17-23) = 3
-    // Trung Bình (7-16) = 2
-    // Hỗ Trợ (1-6) = 1
+    // Trụ Cột (14-17) = 3
+    // Trung Bình (8-13) = 2
+    // Hỗ Trợ (1-7) = 1
     const getCategory = (rank) => {
-      if (rank >= 17) return 3
-      if (rank >= 7) return 2
-      return 1
+      if (rank >= 14) return 3 // Trụ Cột: 14-17 điểm
+      if (rank >= 8) return 2  // Trung Bình: 8-13 điểm
+      return 1                 // Hỗ Trợ: 1-7 điểm
     }
     
     const categoryA = getCategory(a.rank)

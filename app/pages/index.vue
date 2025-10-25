@@ -57,7 +57,7 @@
                        <div class="text-5xl mb-3">🏛️</div>
                        <h3 class="text-xl font-bold text-red-800 mb-2">Trụ Cột (A)</h3>
                        <div class="inline-block bg-red-200 px-4 py-1 rounded-full">
-                         <span class="text-red-800 font-semibold">Điểm: ≥17</span>
+                         <span class="text-red-800 font-semibold">Điểm: 14-17</span>
                        </div>
                        <div class="mt-4 p-3 bg-red-200 rounded-xl">
                          <div class="text-4xl font-bold text-red-900">{{ getCategoryCount('A') }}</div>
@@ -90,7 +90,7 @@
                        <div class="text-5xl mb-3">⚖️</div>
                        <h3 class="text-xl font-bold text-yellow-800 mb-2">Trung Bình (B)</h3>
                        <div class="inline-block bg-yellow-200 px-4 py-1 rounded-full">
-                         <span class="text-yellow-800 font-semibold">Điểm: 7-16</span>
+                         <span class="text-yellow-800 font-semibold">Điểm: 8-13</span>
                        </div>
                        <div class="mt-4 p-3 bg-yellow-200 rounded-xl">
                          <div class="text-4xl font-bold text-yellow-900">{{ getCategoryCount('B') }}</div>
@@ -123,7 +123,7 @@
                        <div class="text-5xl mb-3">🤝</div>
                        <h3 class="text-xl font-bold text-green-800 mb-2">Hỗ Trợ (C)</h3>
                        <div class="inline-block bg-green-200 px-4 py-1 rounded-full">
-                         <span class="text-green-800 font-semibold">Điểm: 1-6</span>
+                         <span class="text-green-800 font-semibold">Điểm: 1-7</span>
                        </div>
                        <div class="mt-4 p-3 bg-green-200 rounded-xl">
                          <div class="text-4xl font-bold text-green-900">{{ getCategoryCount('C') }}</div>
@@ -887,9 +887,9 @@ const getCategoryCount = (category) => {
   return players.value.filter(player => {
     if (!player.rank) return false
     switch (category) {
-      case 'A': return player.rank >= 17
-      case 'B': return player.rank >= 7 && player.rank < 17
-      case 'C': return player.rank >= 1 && player.rank < 7
+      case 'A': return player.rank >= 14 // Trụ Cột: 14-17 điểm
+      case 'B': return player.rank >= 8 && player.rank < 14 // Trung Bình: 8-13 điểm
+      case 'C': return player.rank >= 1 && player.rank < 8 // Hỗ Trợ: 1-7 điểm
       default: return false
     }
   }).length

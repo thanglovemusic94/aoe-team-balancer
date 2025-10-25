@@ -109,11 +109,12 @@ const generateTeams = async () => {
   try {
     // Bước 1: Phân loại người chơi
     algorithmSteps.value.push('🔄 Đang phân loại người chơi...')
+    algorithmSteps.value.push('🎯 Mục tiêu: Chênh lệch tối đa 2-3 điểm (chấp nhận)')
     await sleep(500)
     
-    const groupA = props.players.filter(p => p.rank >= 17) // Trụ Cột
-    const groupB = props.players.filter(p => p.rank >= 7 && p.rank < 17) // Trung Bình  
-    const groupC = props.players.filter(p => p.rank >= 1 && p.rank < 7) // Hỗ Trợ
+    const groupA = props.players.filter(p => p.rank >= 14) // Trụ Cột: 14-17 điểm
+    const groupB = props.players.filter(p => p.rank >= 8 && p.rank < 14) // Trung Bình: 8-13 điểm
+    const groupC = props.players.filter(p => p.rank >= 1 && p.rank < 8) // Hỗ Trợ: 1-7 điểm
     
     algorithmSteps.value.push(`✅ Nhóm A (Trụ Cột): ${groupA.length} người`)
     algorithmSteps.value.push(`✅ Nhóm B (Trung Bình): ${groupB.length} người`)
@@ -218,7 +219,18 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Tạo playersToAssign mới từ sortedPlayers gốc trong mỗi attempt - LUÔN shuffle
-    const playersToAssign = shuffleArray([...sortedPlayers])
+    let playersToAssign = shuffleArray([...sortedPlayers])
+    
+    // Thêm random factor mạnh hơn để tạo kết quả khác nhau
+    if (Math.random() < 0.7) {
+      // 70% khả năng shuffle lại để tăng tính random
+      playersToAssign = shuffleArray(playersToAssign)
+    }
+    
+    // 30% khả năng đảo ngược thứ tự để tăng random
+    if (Math.random() < 0.3) {
+      playersToAssign = playersToAssign.reverse()
+    }
     
     const tempTeams = teams.map(team => ({
       ...team,
@@ -327,10 +339,10 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
       currentScore = score
       
       // Cập nhật best solution nếu tốt hơn
-      if (score < bestScore) {
-        bestScore = score
-        bestSolution = tempTeams.map(team => ({ ...team }))
-        
+    if (score < bestScore) {
+      bestScore = score
+      bestSolution = tempTeams.map(team => ({ ...team }))
+      
         // Log khi tìm thấy solution tốt hơn
         if (attempt <= 5) {
           const teamWithHighest = tempTeams.find(t => t.players.some(p => p.name === globalHighestPlayer.name))
@@ -344,23 +356,29 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
       temperature = Math.max(minTemperature, temperature * coolingRate)
     }
     
-    // Early stopping conditions với Simulated Annealing - ƯU TIÊN CHÊNH LỆCH NHỎ
-    if (allInRange && maxDiff <= 1 && standardDeviation < 1.0) {
-      algorithmSteps.value.push(`🌟 Tìm thấy giải pháp cân bằng hoàn hảo! (SD: ${standardDeviation.toFixed(2)}, MaxDiff: ${maxDiff})`)
-      break
-    }
-    
-    // Dừng sớm nếu chênh lệch rất nhỏ (0-1 điểm)
-    if (maxDiff <= 1 && allInRange) {
-      algorithmSteps.value.push(`🎯 Tìm thấy giải pháp với chênh lệch tối ưu! (MaxDiff: ${maxDiff})`)
-      break
-    }
-    
-    // Dừng sớm nếu đã tìm được giải pháp rất tốt và nhiệt độ đã giảm đủ
-    if (attempt > 5000 && allInRange && maxDiff <= 2 && temperature < 1.0) {
-      algorithmSteps.value.push(`✅ Tìm thấy giải pháp tốt sau ${attempt} lần thử! (MaxDiff: ${maxDiff})`)
-      break
-    }
+     // Early stopping conditions với Simulated Annealing - ƯU TIÊN CHÊNH LỆCH THẤP NHẤT
+     if (allInRange && maxDiff <= 1 && standardDeviation < 1.0) {
+       algorithmSteps.value.push(`🌟 Tìm thấy giải pháp cân bằng hoàn hảo! (SD: ${standardDeviation.toFixed(2)}, MaxDiff: ${maxDiff})`)
+       break
+     }
+     
+     // Dừng sớm nếu chênh lệch rất nhỏ (0-1 điểm)
+     if (maxDiff <= 1 && allInRange) {
+       algorithmSteps.value.push(`🎯 Tìm thấy giải pháp với chênh lệch tối ưu! (MaxDiff: ${maxDiff})`)
+       break
+     }
+     
+     // Dừng sớm nếu chênh lệch ≤ 2 điểm và đã thử đủ lần
+     if (attempt > 1000 && allInRange && maxDiff <= 2) {
+       algorithmSteps.value.push(`✅ Tìm thấy giải pháp tốt! (MaxDiff: ${maxDiff}) sau ${attempt} lần thử`)
+       break
+     }
+     
+     // Dừng sớm nếu chênh lệch ≤ 3 điểm (mặc định) và đã thử đủ lần
+     if (attempt > 500 && allInRange && maxDiff <= 3) {
+       algorithmSteps.value.push(`✅ Tìm thấy giải pháp với chênh lệch ${maxDiff} điểm (chấp nhận 2-3đ) sau ${attempt} lần thử`)
+       break
+     }
   }
   
   // Nếu không tìm được giải pháp hoàn hảo, sử dụng giải pháp tốt nhất
@@ -379,6 +397,23 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
   } else {
     const finalTeamPoints = bestSolution.map(t => t.totalPoints)
     const finalMaxDiff = Math.max(...finalTeamPoints) - Math.min(...finalTeamPoints)
+    
+    // Kiểm tra chênh lệch cuối cùng - chỉ chấp nhận 2-3 điểm
+    if (finalMaxDiff > 3) {
+      algorithmSteps.value.push(`⚠️ Cảnh báo: Chênh lệch ${finalMaxDiff} điểm > 3đ! Thử lại...`)
+      
+      // Thử lại với random seed khác
+      const retryPlayers = shuffleArray([...remainingPlayers])
+      return balanceTeamsRandomly(teams, retryPlayers, globalHighestPlayer, globalLowestPlayer)
+    }
+    
+    // Thông báo kết quả chênh lệch
+    if (finalMaxDiff <= 2) {
+      algorithmSteps.value.push(`🎯 Hoàn hảo! Chênh lệch chỉ ${finalMaxDiff} điểm`)
+    } else if (finalMaxDiff === 3) {
+      algorithmSteps.value.push(`✅ Tốt! Chênh lệch ${finalMaxDiff} điểm (trong khoảng chấp nhận)`)
+    }
+    
     const avgFinalPoints = finalTeamPoints.reduce((sum, points) => sum + points, 0) / finalTeamPoints.length
     const finalVariance = finalTeamPoints.reduce((sum, points) => sum + Math.pow(points - avgFinalPoints, 2), 0) / finalTeamPoints.length
     const finalSD = Math.sqrt(finalVariance)
@@ -539,10 +574,10 @@ const calculateAdvancedScore = (allInRange, variance, maxDiff, standardDeviation
     playerCount: 0.05  // Cân bằng số lượng người
   }
   
-  // Tính điểm cho từng yếu tố - TĂNG PENALTY CHO CHÊNH LỆCH ĐIỂM
+  // Tính điểm cho từng yếu tố - ƯU TIÊN CHÊNH LỆCH 2-3 ĐIỂM
   const rangeScore = allInRange ? 0 : 1000 // Penalty lớn nếu không trong khoảng
   const varianceScore = variance * 10
-  const maxDiffScore = maxDiff * 100 // TĂNG PENALTY LÊN 100 để giảm chênh lệch xuống 1-2 điểm
+  const maxDiffScore = maxDiff <= 2 ? maxDiff * 10 : maxDiff <= 3 ? maxDiff * 30 : maxDiff * 200 // Ưu tiên 2-3đ
   const stdDevScore = standardDeviation * 15
   const categoryScore = (100 - categoryBalanceScore) * 2
   const playerCountScore = (100 - playerCountBalanceScore) * 1
@@ -565,8 +600,8 @@ const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange, 
   let bestTeam = availableTeams[0]
   let bestScore = -Infinity
   
-  // Thêm randomness dựa trên attempt để tạo kết quả khác nhau
-  const randomFactor = Math.random() * (attempt + 1) * 0.1
+  // Thêm randomness mạnh hơn để tạo kết quả khác nhau
+  const randomFactor = Math.random() * 0.5 + Math.random() * (attempt + 1) * 0.1
   
   for (const team of availableTeams) {
     let score = 0
@@ -647,17 +682,17 @@ const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange, 
 // Lấy số lượng người theo category trong team
 const getCategoryCounts = (players) => {
   return {
-    A: players.filter(p => p.rank >= 17).length,
-    B: players.filter(p => p.rank >= 7 && p.rank <= 16).length,
-    C: players.filter(p => p.rank <= 6).length
+    A: players.filter(p => p.rank >= 14).length, // Trụ Cột: 14-17 điểm
+    B: players.filter(p => p.rank >= 8 && p.rank < 14).length, // Trung Bình: 8-13 điểm
+    C: players.filter(p => p.rank >= 1 && p.rank < 8).length // Hỗ Trợ: 1-7 điểm
   }
 }
 
 // Lấy category của player
 const getPlayerCategory = (rank) => {
-  if (rank >= 17) return 'A'
-  if (rank >= 7) return 'B'
-  return 'C'
+  if (rank >= 14) return 'A' // Trụ Cột: 14-17 điểm
+  if (rank >= 8) return 'B'  // Trung Bình: 8-13 điểm
+  return 'C'                 // Hỗ Trợ: 1-7 điểm
 }
 
 // Lấy số lượng lý tưởng cho mỗi category trong team
