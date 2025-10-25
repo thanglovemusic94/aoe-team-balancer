@@ -12,6 +12,11 @@
       </div>
     </div>
     
+    <!-- Debug info -->
+    <div class="mb-2 p-2 bg-yellow-100 rounded text-xs">
+      Debug: players.length = {{ players.length }}, valid players = {{ playerCount }}
+    </div>
+    
     <div class="overflow-x-auto">
       <table class="w-full border-collapse bg-white rounded-lg shadow-sm">
         <thead>
@@ -24,7 +29,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(player, index) in sortedPlayers" :key="index" class="hover:bg-gray-50">
+          <tr v-for="(player, index) in players" :key="`player-${index}-${players.length}`" class="hover:bg-gray-50">
             <td class="border border-gray-300 px-3 py-2 text-center text-sm">{{ index + 1 }}</td>
             <td class="border border-gray-300 px-2 py-1">
               <input
@@ -84,7 +89,7 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div class="text-center">
           <div class="font-semibold text-gray-700">Tổng người chơi</div>
-          <div class="text-lg font-bold text-blue-600">{{ playerCount }}/28</div>
+          <div class="text-lg font-bold text-blue-600">{{ playerCount }} người</div>
         </div>
         <div class="text-center">
           <div class="font-semibold text-gray-700">Trụ Cột (A)</div>
@@ -101,27 +106,60 @@
       </div>
     </div>
 
-    <div class="mt-4 flex justify-between items-center">
-      <div class="flex space-x-2">
+    <div class="mt-4 space-y-3">
+      <!-- Nút xác nhận và tạo ngẫu nhiên -->
+      <div class="flex justify-between items-center">
+        <div class="flex space-x-2">
+          <button
+            @click="addPlayers"
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            ✅ Xác Nhận ({{ playerCount }} người)
+          </button>
+          <button
+            @click="generateRandomPlayers"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            🎲 Tạo Danh Sách Ngẫu Nhiên
+          </button>
+        </div>
         <button
-          @click="addPlayers"
-          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          @click="clearAll"
+          class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
         >
-          ✅ Xác Nhận ({{ playerCount }}/28)
-        </button>
-        <button
-          @click="generateRandomPlayers"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-        >
-          🎲 Tạo Danh Sách Ngẫu Nhiên
+          🗑️ Xóa Tất Cả
         </button>
       </div>
-      <button
-        @click="clearAll"
-        class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-      >
-        🗑️ Xóa Tất Cả
-      </button>
+
+      <!-- Nút thêm người chơi và sắp xếp -->
+      <div class="flex flex-wrap gap-2 items-center">
+        <span class="text-sm font-medium text-gray-700">Thêm người chơi:</span>
+        <button
+          @click="addMorePlayers(4)"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          ➕ Thêm 4 người
+        </button>
+        <button
+          @click="addMorePlayers(8)"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          ➕ Thêm 8 người
+        </button>
+        <button
+          @click="addMorePlayers(16)"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          ➕ Thêm 16 người
+        </button>
+        <button
+          @click="sortPlayersByRank"
+          class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          🔄 Sắp xếp theo điểm
+        </button>
+        <span class="text-sm text-gray-600 ml-2">(Tổng: {{ players.length }} ô)</span>
+      </div>
     </div>
     
     <div v-if="error" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -135,7 +173,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 
 const props = defineProps({
   existingPlayers: {
@@ -150,7 +188,7 @@ const players = ref([])
 const error = ref('')
 const success = ref('')
 
-// Initialize players array
+// Initialize players array with initial capacity of 28
 const initializePlayers = () => {
   players.value = []
   for (let i = 0; i < 28; i++) {
@@ -158,37 +196,67 @@ const initializePlayers = () => {
   }
 }
 
+// Add more players (4, 8, 16, etc.)
+const addMorePlayers = async (count = 4) => {
+  console.log(`🔄 Adding ${count} players. Current length: ${players.value.length}`)
+  
+  // Create new array to force reactivity
+  const newPlayers = [...players.value]
+  for (let i = 0; i < count; i++) {
+    newPlayers.push({ name: '', rank: null })
+  }
+  
+  players.value = newPlayers
+  
+  // Wait for DOM to update
+  await nextTick()
+  
+  console.log(`✅ Added ${count} players. New length: ${players.value.length}`)
+  success.value = `✅ Đã thêm ${count} ô trống mới! Tổng: ${players.value.length} ô`
+  error.value = ''
+  
+  // Don't emit when just adding empty slots - only emit when players have actual data
+}
+
+// Sort players by rank (high to low)
+const sortPlayersByRank = () => {
+  players.value = [...players.value].sort((a, b) => {
+    // If both have rank, sort by rank (high to low)
+    if (a.rank && b.rank) {
+      return b.rank - a.rank
+    }
+    // If only one has rank, player with rank comes first
+    if (a.rank && !b.rank) return -1
+    if (!a.rank && b.rank) return 1
+    // If both don't have rank, keep original order
+    return 0
+  })
+  success.value = '🔄 Đã sắp xếp danh sách theo điểm từ cao xuống thấp!'
+}
+
 // Load existing players if available
 onMounted(() => {
   if (props.existingPlayers && props.existingPlayers.length > 0) {
-    // Load existing players and fill remaining slots
+    // Load existing players
     players.value = [...props.existingPlayers]
-    while (players.value.length < 28) {
-      players.value.push({ name: '', rank: null })
-    }
     console.log('✅ Loaded existing players into input form')
   } else {
     initializePlayers()
   }
 })
 
-// Watch for changes in existingPlayers prop
+// Watch for changes in existingPlayers prop (only on mount, not during updates)
 watch(() => props.existingPlayers, (newPlayers) => {
   if (newPlayers && newPlayers.length > 0) {
-    players.value = [...newPlayers]
-    while (players.value.length < 28) {
-      players.value.push({ name: '', rank: null })
+    // Only update if we don't have any players yet (initial load)
+    if (players.value.length === 0) {
+      players.value = [...newPlayers]
     }
   }
-}, { deep: true })
+}, { deep: true, immediate: false })
 
-// Watch for changes in players and emit updates
-watch(players, (newPlayers) => {
-  const validPlayers = newPlayers.filter(p => p.name && p.rank)
-  if (validPlayers.length > 0) {
-    emit('players-updated', validPlayers)
-  }
-}, { deep: true })
+// Remove automatic watcher to prevent recursive updates
+// We'll emit manually when needed
 
 // Sắp xếp danh sách người chơi theo điểm từ cao xuống thấp
 const sortedPlayers = computed(() => {
@@ -206,7 +274,7 @@ const sortedPlayers = computed(() => {
 })
 
 const playerCount = computed(() => {
-  return sortedPlayers.value.filter(p => p.name && p.rank).length
+  return players.value.filter(p => p.name && p.rank).length
 })
 
 const clearAll = () => {
@@ -266,29 +334,28 @@ const generateRandomPlayers = () => {
   
   players.value = randomPlayers
   success.value = '🎲 Đã tạo danh sách ngẫu nhiên 28 người chơi!'
+  
+  // Emit update manually
+  const validPlayers = players.value.filter(p => p.name && p.rank)
+  emit('players-updated', validPlayers)
 }
 
-// Xóa người chơi tại vị trí index (trong sortedPlayers)
+// Xóa người chơi tại vị trí index (xóa hẳn hàng)
 const deletePlayer = (index) => {
-  const player = sortedPlayers.value[index]
+  const player = players.value[index]
   if (confirm(`Bạn có chắc muốn xóa người chơi "${player.name}"?`)) {
-    // Tìm vị trí thực tế trong mảng players gốc
-    const realIndex = players.value.findIndex(p => p === player)
-    if (realIndex !== -1) {
-      players.value[realIndex] = { name: '', rank: null }
-      success.value = `🗑️ Đã xóa người chơi "${player.name}"`
-      
-      // Emit update immediately
-      const validPlayers = players.value.filter(p => p.name && p.rank)
-      emit('players-updated', validPlayers)
-    }
+    // Xóa hẳn phần tử khỏi mảng
+    players.value.splice(index, 1)
+    success.value = `🗑️ Đã xóa người chơi "${player.name}"`
+    
+    // Emit update manually
+    const validPlayers = players.value.filter(p => p.name && p.rank)
+    emit('players-updated', validPlayers)
   }
 }
 
-// Tạo ngẫu nhiên cho 1 người chơi (trong sortedPlayers)
+// Tạo ngẫu nhiên cho 1 người chơi
 const fillRandomPlayer = (index) => {
-  const player = sortedPlayers.value[index]
-  
   const names = [
     'Liêm', 'Kiếp', 'F88', 'YB 1999', 'Dánh Đông dẹp bắc', 'Pi', 'Trung con', 'Pheo',
     'Thầy Hiệu Trưởng', 'Hoàng Huy', 'Thành Phạm', 'Việt Béo', 'Đinh Xuân Hào', 'Dx Tá',
@@ -306,16 +373,12 @@ const fillRandomPlayer = (index) => {
   // Tạo điểm ngẫu nhiên
   const rank = Math.floor(Math.random() * 23) + 1
   
-  // Tìm vị trí thực tế trong mảng players gốc
-  const realIndex = players.value.findIndex(p => p === player)
-  if (realIndex !== -1) {
-    players.value[realIndex] = { name, rank }
-    success.value = `🎲 Đã tạo ngẫu nhiên "${name}" với ${rank} điểm`
-    
-    // Emit update immediately
-    const validPlayers = players.value.filter(p => p.name && p.rank)
-    emit('players-updated', validPlayers)
-  }
+  players.value[index] = { name, rank }
+  success.value = `🎲 Đã tạo ngẫu nhiên "${name}" với ${rank} điểm`
+  
+  // Emit update manually
+  const validPlayers = players.value.filter(p => p.name && p.rank)
+  emit('players-updated', validPlayers)
 }
 
 // Lấy class cho badge category
@@ -336,7 +399,7 @@ const getRankCategory = (rank) => {
 
 // Đếm số lượng người chơi theo category
 const getCategoryCount = (category) => {
-  return sortedPlayers.value.filter(player => {
+  return players.value.filter(player => {
     if (!player.rank) return false
     switch (category) {
       case 'A': return player.rank >= 17 && player.rank <= 23
@@ -354,9 +417,15 @@ const addPlayers = () => {
   // Filter out empty players
   const validPlayers = players.value.filter(p => p.name && p.rank)
   
-  // Check count
-  if (validPlayers.length !== 28) {
-    error.value = `Vui lòng nhập đủ 28 người chơi. Hiện tại: ${validPlayers.length} người.`
+  // Check minimum count (phải có ít nhất 4 người để chia team)
+  if (validPlayers.length < 4) {
+    error.value = `Vui lòng nhập ít nhất 4 người chơi để chia team. Hiện tại: ${validPlayers.length} người.`
+    return
+  }
+  
+  // Check if count is divisible by 4 (mỗi team có 4 người)
+  if (validPlayers.length % 4 !== 0) {
+    error.value = `Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Hiện tại: ${validPlayers.length} người.`
     return
   }
   
@@ -381,7 +450,8 @@ const addPlayers = () => {
     rank: p.rank
   }))
   
-  success.value = `✅ Đã xác nhận ${formattedPlayers.length} người chơi!`
+  const teamCount = Math.floor(formattedPlayers.length / 4)
+  success.value = `✅ Đã xác nhận ${formattedPlayers.length} người chơi (chia thành ${teamCount} teams)!`
   emit('players-submitted', formattedPlayers)
 }
 </script>

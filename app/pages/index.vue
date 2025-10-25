@@ -54,7 +54,7 @@
         <div v-if="activeTab === 'teams'" class="space-y-8">
           <!-- Team Balancer và Results -->
           <TeamBalancer 
-            v-if="players.length === 28" 
+            v-if="players.length >= 4 && players.length % 4 === 0" 
             :key="regenerateKey"
             :players="players"
             :existing-teams="teams"
@@ -62,17 +62,33 @@
           />
           <TeamResults v-if="teams.length > 0" :teams="teams" @regenerate="handleRegenerate" />
           
-          <!-- Thông báo nếu chưa có đủ 28 người chơi -->
-          <div v-if="players.length < 28" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <!-- Thông báo nếu chưa có đủ người chơi -->
+          <div v-if="players.length < 4" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
             <div class="text-yellow-600 text-lg font-semibold mb-2">
               ⚠️ Chưa đủ người chơi để chia team
             </div>
             <p class="text-yellow-700 mb-4">
-              Hiện tại có {{ players.length }}/28 người chơi. Vui lòng chuyển sang tab "Nhập Danh Sách Người Chơi" để thêm đủ 28 người.
+              Hiện tại có {{ players.length }} người chơi. Vui lòng chuyển sang tab "Nhập Danh Sách Người Chơi" để thêm ít nhất 4 người (phải chia hết cho 4).
             </p>
             <button
               @click="switchToTab('players')"
               class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              👥 Chuyển đến nhập danh sách
+            </button>
+          </div>
+          
+          <!-- Thông báo nếu số người chơi không chia hết cho 4 -->
+          <div v-else-if="players.length % 4 !== 0" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+            <div class="text-orange-600 text-lg font-semibold mb-2">
+              ⚠️ Số người chơi không hợp lệ
+            </div>
+            <p class="text-orange-700 mb-4">
+              Hiện tại có {{ players.length }} người chơi. Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Vui lòng thêm hoặc xóa người chơi.
+            </p>
+            <button
+              @click="switchToTab('players')"
+              class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
             >
               👥 Chuyển đến nhập danh sách
             </button>
@@ -87,13 +103,13 @@
             @players-updated="handlePlayersUpdate"
           />
           
-          <!-- Thông báo khi đã có đủ 28 người -->
-          <div v-if="players.length === 28" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <!-- Thông báo khi đã có đủ người chơi -->
+          <div v-if="players.length >= 4 && players.length % 4 === 0" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
             <div class="text-green-600 text-lg font-semibold mb-2">
-              ✅ Đã có đủ 28 người chơi!
+              ✅ Đã có đủ {{ players.length }} người chơi!
             </div>
             <p class="text-green-700 mb-4">
-              Bạn có thể chuyển sang tab "Chia Team Cân Bằng Ngẫu Nhiên" để bắt đầu chia team.
+              Bạn có thể chuyển sang tab "Chia Team Cân Bằng Ngẫu Nhiên" để bắt đầu chia team ({{ Math.floor(players.length / 4) }} teams).
             </p>
             <button
               @click="switchToTab('teams')"
