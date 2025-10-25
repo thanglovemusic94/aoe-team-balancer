@@ -76,12 +76,34 @@
     
     <!-- Nút chia lại -->
     <div class="mt-8 text-center">
+      <div v-if="!isAdmin" class="mb-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span class="text-2xl">🔒</span>
+          <p class="text-sm font-semibold text-yellow-800">
+            Yêu cầu đăng nhập Admin
+          </p>
+        </div>
+        <p class="text-sm text-gray-700 mb-3">
+          Chỉ admin mới có thể quay random lại các đội. Vui lòng đăng nhập để sử dụng chức năng này.
+        </p>
+        <button 
+          @click="() => emit('require-admin', 'quay random ' + teams.length + ' đội cân bằng')"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-md"
+        >
+          🔐 Đăng nhập Admin
+        </button>
+      </div>
+      
       <button
-        @click="$emit('regenerate')"
-        class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+        @click="handleRegenerate"
+        :disabled="!isAdmin"
+        class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg disabled:hover:scale-100 disabled:shadow-none"
       >
-        🔄 Chia Lại Team
+        🎲 Quay Random {{ teams.length }} Đội Cân Bằng
       </button>
+      <p v-if="isAdmin" class="mt-2 text-xs text-gray-500">
+        Click để tạo lại {{ teams.length }} đội ngẫu nhiên với thuật toán cân bằng tiên tiến
+      </p>
     </div>
   </div>
 </template>
@@ -93,10 +115,22 @@ const props = defineProps({
   teams: {
     type: Array,
     required: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['regenerate'])
+const emit = defineEmits(['regenerate', 'require-admin'])
+
+const handleRegenerate = () => {
+  if (!props.isAdmin) {
+    emit('require-admin', 'chia lại team')
+    return
+  }
+  emit('regenerate')
+}
 
 const sortedTeams = computed(() => {
   return [...props.teams].sort((a, b) => a.id - b.id) // Sắp xếp theo ID từ nhỏ đến lớn
@@ -150,16 +184,16 @@ const getPlayerRankClass = (rank) => {
 }
 
 const getRankBadgeClass = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'bg-red-100 text-red-700 border border-red-300'
-  if (rank >= 7 && rank <= 16) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-  if (rank >= 1 && rank <= 6) return 'bg-green-100 text-green-700 border border-green-300'
+  if (rank >= 17) return 'bg-red-100 text-red-700 border border-red-300'
+  if (rank >= 7) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300'
   return 'bg-gray-100 text-gray-700 border border-gray-300'
 }
 
 const getRankCategory = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'Trụ Cột'
-  if (rank >= 7 && rank <= 16) return 'Trung Bình'
-  if (rank >= 1 && rank <= 6) return 'Hỗ Trợ'
+  if (rank >= 17) return 'Trụ Cột'
+  if (rank >= 7) return 'Trung Bình'
+  if (rank >= 1) return 'Hỗ Trợ'
   return 'N/A'
 }
 
@@ -168,9 +202,9 @@ const getPlayersByCategory = (players, category) => {
     case 'A':
       return players.filter(p => p.rank >= 17)
     case 'B':
-      return players.filter(p => p.rank >= 7 && p.rank <= 16)
+      return players.filter(p => p.rank >= 7 && p.rank < 17)
     case 'C':
-      return players.filter(p => p.rank <= 6)
+      return players.filter(p => p.rank >= 1 && p.rank < 7)
     default:
       return []
   }

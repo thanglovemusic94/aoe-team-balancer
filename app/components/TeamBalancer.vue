@@ -5,22 +5,57 @@
     </h2>
     
     <div class="mb-6">
+      <!-- Thông báo khi không phải admin -->
+      <div v-if="!isAdmin" class="mb-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span class="text-2xl">🔒</span>
+          <p class="text-sm font-semibold text-yellow-800">
+            Yêu cầu đăng nhập Admin
+          </p>
+        </div>
+        <p class="text-sm text-gray-700 mb-3">
+          Chỉ admin mới có thể quay random các đội. Vui lòng đăng nhập để sử dụng chức năng này.
+        </p>
+        <button 
+          @click="() => emit('require-admin', 'quay random ' + Math.floor(players.length / 4) + ' đội cân bằng')"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-md"
+        >
+          🔐 Đăng nhập Admin
+        </button>
+      </div>
+      
       <button
         @click="generateTeams"
-        :disabled="isGenerating"
-        class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center"
+        :disabled="isGenerating || !isAdmin"
+        class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg disabled:hover:scale-100 disabled:shadow-none flex items-center"
       >
-        <span v-if="!isGenerating">🎲 Quay Random 7 Đội Cân Bằng</span>
+        <span v-if="!isGenerating">🎲 Quay Random {{ Math.floor(players.length / 4) }} Đội Cân Bằng</span>
         <span v-else class="flex items-center">
           <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
           Đang chia team...
         </span>
       </button>
+      <p v-if="isAdmin" class="mt-2 text-xs text-gray-500 text-center">
+        Click để tạo {{ Math.floor(players.length / 4) }} đội ngẫu nhiên với thuật toán cân bằng tiên tiến
+      </p>
     </div>
     
     <div v-if="algorithmSteps.length > 0" class="mb-6">
-      <h3 class="text-lg font-semibold text-gray-700 mb-3">Quá trình chia team:</h3>
-      <div class="space-y-2">
+      <!-- Header có thể click để toggle -->
+      <div 
+        @click="toggleAlgorithmSteps"
+        class="cursor-pointer hover:bg-gray-100 transition-colors rounded-lg p-3 mb-3"
+      >
+        <h3 class="text-lg font-semibold text-gray-700 flex items-center justify-between">
+          <span>🔄 Quá trình chia team:</span>
+          <span class="text-lg transition-transform duration-200" :class="{ 'rotate-180': showAlgorithmSteps }">
+            ▼
+          </span>
+        </h3>
+      </div>
+      
+      <!-- Nội dung có thể thu gọn -->
+      <div v-show="showAlgorithmSteps" class="space-y-2">
         <div 
           v-for="(step, index) in algorithmSteps" 
           :key="index"
@@ -44,15 +79,30 @@ const props = defineProps({
   existingTeams: {
     type: Array,
     default: () => []
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['teams-generated'])
+const emit = defineEmits(['teams-generated', 'require-admin'])
 
 const isGenerating = ref(false)
 const algorithmSteps = ref([])
+const showAlgorithmSteps = ref(false) // Flag để thu gọn phần quá trình chia team
+
+// Toggle function cho dropdown
+const toggleAlgorithmSteps = () => {
+  showAlgorithmSteps.value = !showAlgorithmSteps.value
+}
 
 const generateTeams = async () => {
+  if (!props.isAdmin) {
+    emit('require-admin', 'quay random ' + Math.floor(props.players.length / 4) + ' đội cân bằng')
+    return
+  }
+  
   isGenerating.value = true
   algorithmSteps.value = []
   
@@ -61,51 +111,60 @@ const generateTeams = async () => {
     algorithmSteps.value.push('🔄 Đang phân loại người chơi...')
     await sleep(500)
     
-    const groupA = props.players.filter(p => p.rank >= 17 && p.rank <= 23) // 7 người
-    const groupB = props.players.filter(p => p.rank >= 7 && p.rank <= 16) // 10 người  
-    const groupC = props.players.filter(p => p.rank >= 1 && p.rank <= 6) // 11 người
+    const groupA = props.players.filter(p => p.rank >= 17) // Trụ Cột
+    const groupB = props.players.filter(p => p.rank >= 7 && p.rank < 17) // Trung Bình  
+    const groupC = props.players.filter(p => p.rank >= 1 && p.rank < 7) // Hỗ Trợ
     
     algorithmSteps.value.push(`✅ Nhóm A (Trụ Cột): ${groupA.length} người`)
     algorithmSteps.value.push(`✅ Nhóm B (Trung Bình): ${groupB.length} người`)
     algorithmSteps.value.push(`✅ Nhóm C (Hỗ Trợ): ${groupC.length} người`)
     
-    // Bước 2: Tìm người cao nhất và thấp nhất trong TẤT CẢ 28 người
+    // Bước 2: Tìm người cao nhất và thấp nhất trong TẤT CẢ người chơi
     const allPlayers = [...props.players]
     const sortedAllPlayers = allPlayers.sort((a, b) => b.rank - a.rank)
-    const globalHighestPlayer = sortedAllPlayers[0] // Người 23 điểm
-    const globalLowestPlayer = sortedAllPlayers[sortedAllPlayers.length - 1] // Người 1 điểm
+    const globalHighestPlayer = sortedAllPlayers[0] // Người điểm cao nhất
+    const globalLowestPlayer = sortedAllPlayers[sortedAllPlayers.length - 1] // Người điểm thấp nhất
     
     algorithmSteps.value.push(`🎯 Người cao nhất: ${globalHighestPlayer.name} (${globalHighestPlayer.rank} điểm)`)
     algorithmSteps.value.push(`🎯 Người thấp nhất: ${globalLowestPlayer.name} (${globalLowestPlayer.rank} điểm)`)
     
-    // Bước 3: Xáo trộn nhóm A và gán trụ cột
+    // Bước 3: Tính số team cần tạo
+    const totalPlayers = props.players.length
+    const teamCount = Math.floor(totalPlayers / 4)
+    algorithmSteps.value.push(`📊 Tổng ${totalPlayers} người chơi → Tạo ${teamCount} teams`)
+    
+    // Bước 4: Xáo trộn nhóm A và gán trụ cột
     algorithmSteps.value.push('🎲 Đang xáo trộn nhóm trụ cột...')
     await sleep(500)
     
     const shuffledGroupA = shuffleArray([...groupA])
     algorithmSteps.value.push(`✅ Đã xáo trộn ${shuffledGroupA.length} trụ cột`)
     
-    // Bước 4: Tạo 7 team với trụ cột
-    algorithmSteps.value.push('🏗️ Đang tạo 7 team với trụ cột...')
+    // Bước 5: Tạo teams với trụ cột
+    algorithmSteps.value.push(`🏗️ Đang tạo ${teamCount} team với trụ cột...`)
     await sleep(500)
     
     const teams = []
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < teamCount; i++) {
+      const pillarPlayer = shuffledGroupA[i] || null // Có thể không đủ trụ cột
       teams.push({
         id: i + 1,
         name: `Team ${i + 1}`,
-        players: [shuffledGroupA[i]],
-        totalPoints: shuffledGroupA[i].rank
+        players: pillarPlayer ? [pillarPlayer] : [],
+        totalPoints: pillarPlayer ? pillarPlayer.rank : 0
       })
     }
     
-    algorithmSteps.value.push('✅ Đã gán trụ cột cho 7 team')
+    algorithmSteps.value.push(`✅ Đã gán trụ cột cho ${teamCount} team`)
     
-    // Bước 5: Phân bổ ngẫu nhiên nhóm B và C
+    // Bước 6: Phân bổ ngẫu nhiên nhóm B và C
     algorithmSteps.value.push('🎯 Đang phân bổ ngẫu nhiên nhóm B và C...')
     await sleep(500)
     
-    const remainingPlayers = [...groupB, ...groupC] // Không shuffle để giữ thứ tự gốc
+    // Lấy tất cả người chơi chưa được gán (trừ những người đã gán làm trụ cột)
+    const assignedPillars = teams.filter(t => t.players.length > 0).map(t => t.players[0])
+    const remainingPlayers = props.players.filter(p => !assignedPillars.some(ap => ap.name === p.name))
+    
     algorithmSteps.value.push(`✅ Có ${remainingPlayers.length} người còn lại để phân bổ`)
     
     // Thuật toán cân bằng ngẫu nhiên
@@ -124,7 +183,23 @@ const generateTeams = async () => {
 
 const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer, globalLowestPlayer) => {
   // Thuật toán cân bằng nâng cao với Simulated Annealing
-  const targetRange = { min: 42, max: 46 }
+  
+  // Tính toán khoảng điểm mục tiêu từ dữ liệu thực tế
+  const allPlayers = [...props.players]
+  const avgPlayerPoints = allPlayers.reduce((sum, p) => sum + p.rank, 0) / allPlayers.length
+  const targetPerTeam = avgPlayerPoints * 4 // 4 người/team
+  const tolerance = 0.15 // 15% dao động cho phép
+  const targetRange = { 
+    min: Math.floor(targetPerTeam * (1 - tolerance)), 
+    max: Math.floor(targetPerTeam * (1 + tolerance)) 
+  }
+  
+  // Log thông tin tính toán
+  algorithmSteps.value.push(`📊 Tính toán khoảng điểm mục tiêu:`)
+  algorithmSteps.value.push(`   - Điểm trung bình/người: ${avgPlayerPoints.toFixed(1)}`)
+  algorithmSteps.value.push(`   - Điểm mục tiêu/team: ${targetPerTeam.toFixed(1)}`)
+  algorithmSteps.value.push(`   - Khoảng cho phép: ${targetRange.min}-${targetRange.max} điểm`)
+  
   const maxAttempts = 15000 // Tăng số lần thử
   
   let bestSolution = null
@@ -168,7 +243,6 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
       
       // Log để debug
       if (attempt <= 2) {
-        console.log(`🔍 [Attempt ${attempt}] Tìm ${globalLowestPlayer.name} (${globalLowestPlayer.rank}) trong playersToAssign, Index: ${lowestPlayerIndex}`)
       }
       
       if (lowestPlayerIndex > -1) {
@@ -178,12 +252,10 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
         
         // Log để debug
         if (attempt <= 2) {
-          console.log(`✅ [Attempt ${attempt}] Cặp ${globalHighestPlayer.name} (${globalHighestPlayer.rank}) với ${globalLowestPlayer.name} (${globalLowestPlayer.rank}) vào ${targetTeamForGlobalPair.name}`)
         }
       } else {
         // Log để debug
         if (attempt <= 2) {
-          console.warn(`⚠️ [Attempt ${attempt}] Không tìm thấy ${globalLowestPlayer.name} trong playersToAssign!`)
         }
       }
     }
@@ -194,7 +266,6 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
       
       // Nếu không còn team nào có slot, dừng lại
       if (availableTeams.length === 0) {
-        console.warn(`⚠️ Đã hết slot cho team, còn ${playersToAssign.length - 1} người chưa được phân bổ`)
         break
       }
       
@@ -208,15 +279,12 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
     // Log để debug
     if (attempt === 0) {
       const totalAssigned = tempTeams.reduce((sum, team) => sum + team.players.length, 0)
-      console.log(`📊 Attempt ${attempt}: Đã phân bổ ${totalAssigned} người vào ${tempTeams.length} teams`)
       tempTeams.forEach((team, i) => {
-        console.log(`   ${team.name}: ${team.players.length} người`)
       })
       
       // Log Team 5 chi tiết để tìm Kiếp
       const team5 = tempTeams.find(t => t.name === 'Team 5')
       if (team5) {
-        console.log(`🔍 Team 5 chi tiết: ${team5.players.map(p => `${p.name}(${p.rank})`).join(', ')}`)
       }
     }
     
@@ -267,7 +335,6 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
         if (attempt <= 5) {
           const teamWithHighest = tempTeams.find(t => t.players.some(p => p.name === globalHighestPlayer.name))
           const hasKiếp = teamWithHighest && teamWithHighest.players.some(p => p.name === globalLowestPlayer.name)
-          console.log(`🎯 Attempt ${attempt}: New best score ${score.toFixed(2)} (${hasKiếp ? 'CÓ' : 'KHÔNG CÓ'} Kiếp trong team có Liêm)`)
         }
       }
     }
@@ -280,14 +347,12 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
     // Early stopping conditions với Simulated Annealing
     if (allInRange && maxDiff <= 1 && standardDeviation < 1.0) {
       algorithmSteps.value.push(`🌟 Tìm thấy giải pháp cân bằng hoàn hảo! (SD: ${standardDeviation.toFixed(2)}, MaxDiff: ${maxDiff})`)
-      console.log(`🌟 Dừng sớm tại attempt ${attempt} - Giải pháp hoàn hảo`)
       break
     }
     
     // Dừng sớm nếu đã tìm được giải pháp rất tốt và nhiệt độ đã giảm đủ
     if (attempt > 8000 && allInRange && maxDiff <= 2 && temperature < 1.0) {
       algorithmSteps.value.push(`✅ Tìm thấy giải pháp tốt sau ${attempt} lần thử! (Temp: ${temperature.toFixed(2)})`)
-      console.log(`✅ Dừng tại attempt ${attempt} - Nhiệt độ thấp và giải pháp tốt`)
       break
     }
   }
@@ -318,6 +383,7 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
     // Debug: Kiểm tra số người trong mỗi team
     const teamPlayerCounts = bestSolution.map(t => t.players.length)
     const totalPlayers = teamPlayerCounts.reduce((sum, count) => sum + count, 0)
+    const expectedPlayers = props.players.length
     // Tính các điểm số nâng cao cho logging
     const finalCategoryBalance = calculateCategoryBalanceScore(bestSolution)
     const finalPlayerCountBalance = calculatePlayerCountBalanceScore(bestSolution)
@@ -329,25 +395,20 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
     algorithmSteps.value.push(`   - Điểm tin cậy: ${finalReliability.toFixed(1)}/100 ${reliabilityLevel}`)
     algorithmSteps.value.push(`   - Cân bằng category: ${finalCategoryBalance.toFixed(1)}/100`)
     algorithmSteps.value.push(`   - Cân bằng số lượng: ${finalPlayerCountBalance.toFixed(1)}/100`)
-    algorithmSteps.value.push(`   - Tổng số người trong teams: ${totalPlayers} (Số người mỗi team: ${teamPlayerCounts.join(', ')})`)
+    algorithmSteps.value.push(`   - Tổng số người trong teams: ${totalPlayers}/${expectedPlayers} (Số người mỗi team: ${teamPlayerCounts.join(', ')})`)
     
-    if (totalPlayers !== 28) {
-      algorithmSteps.value.push(`⚠️ CẢNH BÁO: Tổng số người (${totalPlayers}) khác 28!`)
+    if (totalPlayers !== expectedPlayers) {
+      algorithmSteps.value.push(`⚠️ CẢNH BÁO: Tổng số người (${totalPlayers}) khác ${expectedPlayers}!`)
     }
     
     // Log chi tiết để debug
-    console.log('🔍 Chi tiết teams trước khi emit:')
     bestSolution.forEach(team => {
-      console.log(`   ${team.name}: ${team.players.length} người - ${team.players.map(p => `${p.name}(${p.rank})`).join(', ')}`)
     })
     
     // Kiểm tra Kiếp có trong team có Liêm không
     const teamWithHighest = bestSolution.find(t => t.players.some(p => p.name === globalHighestPlayer.name))
     const hasKiếp = teamWithHighest && teamWithHighest.players.some(p => p.name === globalLowestPlayer.name)
-    console.log(`🔎 Kiểm tra cuối: ${hasKiếp ? '✅ CÓ Kiếp trong team có Liêm' : '❌ KHÔNG CÓ Kiếp trong team có Liêm'}`)
     if (teamWithHighest) {
-      console.log(`   Team có Liêm: ${teamWithHighest.name}`)
-      console.log(`   Players: ${teamWithHighest.players.map(p => `${p.name}(${p.rank})`).join(', ')}`)
     }
   }
   
@@ -594,10 +655,8 @@ const getReliabilityLevel = (score) => {
 onMounted(() => {
   // Chỉ generate nếu chưa có teams (length = 0)
   if (props.existingTeams.length === 0) {
-    console.log('🔄 Chưa có teams, bắt đầu generate...')
     generateTeams()
   } else {
-    console.log('✅ Đã có teams, không generate lại')
   }
 })
 </script>

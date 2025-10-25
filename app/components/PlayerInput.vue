@@ -1,8 +1,13 @@
 <template>
   <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">
-      ✏️ Nhập Danh Sách Người Chơi
-    </h2>
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-semibold text-gray-800">
+        ✏️ Nhập Danh Sách Người Chơi
+      </h2>
+      <div v-if="!isAdmin" class="text-sm text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full">
+        🔒 Chế độ chỉ đọc
+      </div>
+    </div>
     
     <!-- Thông báo khi có dữ liệu sẵn -->
     <div v-if="props.existingPlayers && props.existingPlayers.length > 0" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -12,10 +17,6 @@
       </div>
     </div>
     
-    <!-- Debug info -->
-    <div class="mb-2 p-2 bg-yellow-100 rounded text-xs">
-      Debug: players.length = {{ players.length }}, valid players = {{ playerCount }}
-    </div>
 
     <!-- Thông báo khi chưa có người chơi -->
     <div v-if="players.length === 0" class="mb-4 p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
@@ -60,7 +61,9 @@
                 v-model="player.name"
                 type="text"
                 placeholder="Nhập tên..."
+                :disabled="!isAdmin"
                 class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :class="{ 'bg-gray-100 cursor-not-allowed': !isAdmin }"
               />
             </td>
             <td class="border border-gray-300 px-2 py-1">
@@ -68,9 +71,10 @@
                 v-model.number="player.rank"
                 type="number"
                 min="1"
-                max="23"
-                placeholder="Điểm (1-23)"
+                placeholder="Nhập điểm..."
+                :disabled="!isAdmin"
                 class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :class="{ 'bg-gray-100 cursor-not-allowed': !isAdmin }"
               />
             </td>
             <td class="border border-gray-300 px-2 py-1 text-center">
@@ -88,7 +92,9 @@
                 <button
                   v-if="player.name && player.rank"
                   @click="deletePlayer(index)"
+                  :disabled="!isAdmin"
                   class="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50"
+                  :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
                   title="Xóa người chơi này"
                 >
                   🗑️
@@ -96,7 +102,9 @@
                 <button
                   v-if="!player.name || !player.rank"
                   @click="fillRandomPlayer(index)"
+                  :disabled="!isAdmin"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50"
+                  :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
                   title="Tạo ngẫu nhiên"
                 >
                   🎲
@@ -136,20 +144,18 @@
         <div class="flex space-x-2">
           <button
             @click="addPlayers"
+            :disabled="!isAdmin"
             class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
           >
             ✅ Xác Nhận ({{ playerCount }} người)
-          </button>
-          <button
-            @click="generateRandomPlayers"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-          >
-            🎲 Tạo Danh Sách Ngẫu Nhiên
           </button>
         </div>
         <button
           @click="clearAll"
+          :disabled="!isAdmin"
           class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           🗑️ Xóa Tất Cả
         </button>
@@ -160,25 +166,33 @@
         <span class="text-sm font-medium text-gray-700">Thêm người chơi:</span>
         <button
           @click="addMorePlayers(4)"
+          :disabled="!isAdmin"
           class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           ➕ Thêm 4 người
         </button>
         <button
           @click="addMorePlayers(8)"
+          :disabled="!isAdmin"
           class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           ➕ Thêm 8 người
         </button>
         <button
           @click="addMorePlayers(16)"
+          :disabled="!isAdmin"
           class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           ➕ Thêm 16 người
         </button>
         <button
           @click="sortPlayersByRank"
+          :disabled="!isAdmin"
           class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           🔄 Sắp xếp theo điểm
         </button>
@@ -190,13 +204,17 @@
         <span class="text-sm font-medium text-gray-700">Dữ liệu:</span>
         <button
           @click="exportToJSON"
+          :disabled="!isAdmin"
           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           📤 Export JSON
         </button>
         <button
           @click="importFromJSON"
+          :disabled="!isAdmin"
           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
         >
           📥 Import JSON
         </button>
@@ -227,15 +245,28 @@ const props = defineProps({
   existingPlayers: {
     type: Array,
     default: () => []
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['players-submitted', 'players-updated'])
+const emit = defineEmits(['players-submitted', 'players-updated', 'require-admin'])
 
 const players = ref([])
 const error = ref('')
 const success = ref('')
 const fileInput = ref(null)
+
+// Check if admin is required for action
+const requireAdminForAction = (action) => {
+  if (!props.isAdmin) {
+    emit('require-admin', action)
+    return false
+  }
+  return true
+}
 
 // Initialize players array (empty by default)
 const initializePlayers = () => {
@@ -245,7 +276,8 @@ const initializePlayers = () => {
 
 // Add more players (4, 8, 16, etc.)
 const addMorePlayers = async (count = 4) => {
-  console.log(`🔄 Adding ${count} players. Current length: ${players.value.length}`)
+  if (!requireAdminForAction('thêm người chơi')) return
+  
   
   // Create new array to force reactivity
   const newPlayers = [...players.value]
@@ -258,7 +290,6 @@ const addMorePlayers = async (count = 4) => {
   // Wait for DOM to update
   await nextTick()
   
-  console.log(`✅ Added ${count} players. New length: ${players.value.length}`)
   success.value = `✅ Đã thêm ${count} ô trống mới! Tổng: ${players.value.length} ô`
   error.value = ''
   
@@ -267,6 +298,8 @@ const addMorePlayers = async (count = 4) => {
 
 // Sort players by rank (high to low)
 const sortPlayersByRank = () => {
+  if (!requireAdminForAction('sắp xếp danh sách')) return
+  
   players.value = [...players.value].sort((a, b) => {
     // If both have rank, sort by rank (high to low)
     if (a.rank && b.rank) {
@@ -351,7 +384,6 @@ const handleFileImport = (event) => {
       success.value = `📥 Đã import ${validPlayers.length} người chơi từ file JSON!`
       error.value = ''
       
-      console.log('✅ Imported data:', data)
       
     } catch (err) {
       error.value = `Lỗi import file: ${err.message}`
@@ -370,7 +402,6 @@ onMounted(() => {
   if (props.existingPlayers && props.existingPlayers.length > 0) {
     // Load existing players
     players.value = [...props.existingPlayers]
-    console.log('✅ Loaded existing players into input form')
   } else {
     initializePlayers()
   }
@@ -409,67 +440,18 @@ const playerCount = computed(() => {
 })
 
 const clearAll = () => {
+  if (!requireAdminForAction('xóa tất cả dữ liệu')) return
+  
   players.value = []
   error.value = ''
   success.value = ''
 }
 
-const generateRandomPlayers = () => {
-  error.value = ''
-  success.value = ''
-  
-  // Danh sách tên ngẫu nhiên
-  const names = [
-    'Liêm', 'Kiếp', 'F88', 'YB 1999', 'Dánh Đông dẹp bắc', 'Pi', 'Trung con', 'Pheo',
-    'Thầy Hiệu Trưởng', 'Hoàng Huy', 'Thành Phạm', 'Việt Béo', 'Đinh Xuân Hào', 'Dx Tá',
-    'Bảnh', 'Hiệp', 'Bé bom', 'Ngô Bảo Long', 'Tũn', 'Giáp Nguyễn', 'Cụ già', 'Kim Chung',
-    'Máy tính tất thắng', 'Lưu Văn Sỹ', 'Phong Lâm', 'Tuấn Tuấn', 'Thang Tony', 'Koi'
-  ]
-  
-  // Tạo 32 người chơi ngẫu nhiên (8 teams)
-  const randomPlayers = []
-  const usedNames = new Set()
-  
-  for (let i = 0; i < 32; i++) {
-    let name
-    do {
-      name = names[Math.floor(Math.random() * names.length)]
-    } while (usedNames.has(name))
-    
-    usedNames.add(name)
-    
-    // Phân bổ điểm theo tỷ lệ: 8 người A (17-23), 12 người B (7-16), 12 người C (1-6)
-    let rank
-    if (i < 8) {
-      // Nhóm A: 17-23 điểm
-      rank = Math.floor(Math.random() * 7) + 17
-    } else if (i < 20) {
-      // Nhóm B: 7-16 điểm
-      rank = Math.floor(Math.random() * 10) + 7
-    } else {
-      // Nhóm C: 1-6 điểm
-      rank = Math.floor(Math.random() * 6) + 1
-    }
-    
-    randomPlayers.push({ name, rank })
-  }
-  
-  // Xáo trộn thứ tự
-  for (let i = randomPlayers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [randomPlayers[i], randomPlayers[j]] = [randomPlayers[j], randomPlayers[i]]
-  }
-  
-  players.value = randomPlayers
-  success.value = '🎲 Đã tạo danh sách ngẫu nhiên 32 người chơi!'
-  
-  // Emit update manually
-  const validPlayers = players.value.filter(p => p.name && p.rank)
-  emit('players-updated', validPlayers)
-}
 
 // Xóa người chơi tại vị trí index (xóa hẳn hàng)
 const deletePlayer = (index) => {
+  if (!requireAdminForAction('xóa người chơi')) return
+  
   const player = players.value[index]
   if (confirm(`Bạn có chắc muốn xóa người chơi "${player.name}"?`)) {
     // Xóa hẳn phần tử khỏi mảng
@@ -484,6 +466,8 @@ const deletePlayer = (index) => {
 
 // Tạo ngẫu nhiên cho 1 người chơi
 const fillRandomPlayer = (index) => {
+  if (!requireAdminForAction('tạo người chơi ngẫu nhiên')) return
+  
   const names = [
     'Liêm', 'Kiếp', 'F88', 'YB 1999', 'Dánh Đông dẹp bắc', 'Pi', 'Trung con', 'Pheo',
     'Thầy Hiệu Trưởng', 'Hoàng Huy', 'Thành Phạm', 'Việt Béo', 'Đinh Xuân Hào', 'Dx Tá',
@@ -511,17 +495,19 @@ const fillRandomPlayer = (index) => {
 
 // Lấy class cho badge category
 const getRankBadgeClass = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'bg-red-100 text-red-700 border border-red-300'
-  if (rank >= 7 && rank <= 16) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-  if (rank >= 1 && rank <= 6) return 'bg-green-100 text-green-700 border border-green-300'
+  if (!rank) return 'bg-gray-100 text-gray-700 border border-gray-300'
+  if (rank >= 17) return 'bg-red-100 text-red-700 border border-red-300'
+  if (rank >= 7) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300'
   return 'bg-gray-100 text-gray-700 border border-gray-300'
 }
 
 // Lấy category của rank
 const getRankCategory = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'Trụ Cột'
-  if (rank >= 7 && rank <= 16) return 'Trung Bình'
-  if (rank >= 1 && rank <= 6) return 'Hỗ Trợ'
+  if (!rank) return 'N/A'
+  if (rank >= 17) return 'Trụ Cột'
+  if (rank >= 7) return 'Trung Bình'
+  if (rank >= 1) return 'Hỗ Trợ'
   return 'N/A'
 }
 
@@ -530,15 +516,17 @@ const getCategoryCount = (category) => {
   return players.value.filter(player => {
     if (!player.rank) return false
     switch (category) {
-      case 'A': return player.rank >= 17 && player.rank <= 23
-      case 'B': return player.rank >= 7 && player.rank <= 16
-      case 'C': return player.rank >= 1 && player.rank <= 6
+      case 'A': return player.rank >= 17
+      case 'B': return player.rank >= 7 && player.rank < 17
+      case 'C': return player.rank >= 1 && player.rank < 7
       default: return false
     }
   }).length
 }
 
 const addPlayers = () => {
+  if (!requireAdminForAction('xác nhận danh sách người chơi')) return
+  
   error.value = ''
   success.value = ''
   
@@ -557,10 +545,10 @@ const addPlayers = () => {
     return
   }
   
-  // Validate rank range
-  const invalidRank = validPlayers.find(p => p.rank < 1 || p.rank > 23)
+  // Validate rank range (chỉ check min, không giới hạn max)
+  const invalidRank = validPlayers.find(p => p.rank < 1)
   if (invalidRank) {
-    error.value = `Điểm số phải trong khoảng 1-23.`
+    error.value = `Điểm số phải lớn hơn hoặc bằng 1.`
     return
   }
   
