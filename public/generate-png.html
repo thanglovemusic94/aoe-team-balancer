@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generate PNG</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; }
+        .container { 
+            width: 1200px; 
+            height: 630px; 
+            background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        .game-icon { font-size: 120px; margin-bottom: 20px; }
+        .title { font-size: 72px; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .subtitle { font-size: 32px; margin-bottom: 30px; opacity: 0.9; text-align: center; }
+        .features { display: flex; justify-content: center; gap: 60px; font-size: 24px; }
+        .bottom-text { font-size: 20px; opacity: 0.75; text-align: center; margin-top: 30px; }
+        button { 
+            margin-top: 20px; 
+            padding: 10px 20px; 
+            background: white; 
+            color: #3B82F6; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="og-image">
+        <div class="game-icon">🎮</div>
+        <div class="title">AOE Team Balancer</div>
+        <div class="subtitle">Chia Team Cân Bằng Ngẫu Nhiên</div>
+        <div class="features">
+            <div>🏛️ Trụ Cột</div>
+            <div>⚖️ Trung Bình</div>
+            <div>🤝 Hỗ Trợ</div>
+        </div>
+        <div class="bottom-text">Thuật toán tiên tiến • Cân bằng hoàn hảo • Dễ sử dụng</div>
+    </div>
+    
+    <button onclick="downloadPNG()">Tải ảnh PNG</button>
+    
+    <script>
+        function downloadPNG() {
+            const element = document.getElementById('og-image');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = 1200;
+            canvas.height = 630;
+            
+            // Tạo gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            gradient.addColorStop(0, '#3B82F6');
+            gradient.addColorStop(1, '#1E40AF');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // Vẽ text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 72px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('AOE Team Balancer', 600, 300);
+            
+            ctx.font = '32px Arial';
+            ctx.fillText('Chia Team Cân Bằng Ngẫu Nhiên', 600, 350);
+            
+            ctx.font = '24px Arial';
+            ctx.fillText('🏛️ Trụ Cột', 300, 450);
+            ctx.fillText('⚖️ Trung Bình', 600, 450);
+            ctx.fillText('🤝 Hỗ Trợ', 900, 450);
+            
+            ctx.font = '20px Arial';
+            ctx.fillText('Thuật toán tiên tiến • Cân bằng hoàn hảo • Dễ sử dụng', 600, 550);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = 'og-image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

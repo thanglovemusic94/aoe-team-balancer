@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tạo ảnh AOE Team Balancer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .preview {
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            position: relative;
+            margin: 20px auto;
+            border: 2px solid #ddd;
+        }
+
+        .game-icon {
+            font-size: 120px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .title {
+            font-size: 72px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 32px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .bottom-text {
+            font-size: 20px;
+            opacity: 0.75;
+            text-align: center;
+            margin-top: 30px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px;
+        }
+
+        button:hover {
+            background: #1E40AF;
+        }
+
+        .instructions {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="instructions">
+        <h2>🖼️ Tạo ảnh Open Graph cho AOE Team Balancer</h2>
+        <p><strong>Cách 1: Chụp màn hình</strong></p>
+        <ol>
+            <li>Nhấn nút "Chụp màn hình" bên dưới</li>
+            <li>Chụp màn hình vùng ảnh preview</li>
+            <li>Lưu thành file <code>og-image.png</code></li>
+            <li>Đặt vào thư mục <code>public/</code></li>
+        </ol>
+
+        <p><strong>Cách 2: Sử dụng Developer Tools</strong></p>
+        <ol>
+            <li>Nhấn F12 để mở Developer Tools</li>
+            <li>Chọn tab "Elements"</li>
+            <li>Right-click vào div có class "preview"</li>
+            <li>Chọn "Capture node screenshot"</li>
+            <li>Lưu thành <code>og-image.png</code></li>
+        </ol>
+    </div>
+
+    <div class="controls">
+        <button onclick="captureScreenshot()">📸 Chụp màn hình</button>
+        <button onclick="downloadAsPNG()">💾 Tải ảnh PNG</button>
+    </div>
+
+    <div class="preview" id="og-preview">
+        <div class="game-icon">🎮</div>
+        <div class="title">AOE Team Balancer</div>
+        <div class="subtitle">Chia Team Cân Bằng Ngẫu Nhiên</div>
+        <div class="features">
+            <div>🏛️ Trụ Cột</div>
+            <div>⚖️ Trung Bình</div>
+            <div>🤝 Hỗ Trợ</div>
+        </div>
+        <div class="bottom-text">Thuật toán tiên tiến • Cân bằng hoàn hảo • Dễ sử dụng</div>
+    </div>
+
+    <script>
+        function captureScreenshot() {
+            alert('Hướng dẫn:\n1. Nhấn Print Screen (PrtScn)\n2. Mở Paint hoặc Photoshop\n3. Paste (Ctrl+V)\n4. Crop vùng ảnh preview\n5. Lưu thành og-image.png');
+        }
+
+        function downloadAsPNG() {
+            const element = document.getElementById('og-preview');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 1200;
+            canvas.height = 630;
+
+            // Tạo gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            gradient.addColorStop(0, '#3B82F6');
+            gradient.addColorStop(1, '#1E40AF');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // Vẽ game icon
+            ctx.font = '120px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎮', 600, 200);
+
+            // Vẽ title
+            ctx.font = 'bold 72px Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText('AOE Team Balancer', 600, 300);
+
+            // Vẽ subtitle
+            ctx.font = '32px Arial';
+            ctx.fillText('Chia Team Cân Bằng Ngẫu Nhiên', 600, 350);
+
+            // Vẽ features
+            ctx.font = '24px Arial';
+            ctx.fillText('🏛️ Trụ Cột', 300, 450);
+            ctx.fillText('⚖️ Trung Bình', 600, 450);
+            ctx.fillText('🤝 Hỗ Trợ', 900, 450);
+
+            // Vẽ bottom text
+            ctx.font = '20px Arial';
+            ctx.fillText('Thuật toán tiên tiến • Cân bằng hoàn hảo • Dễ sử dụng', 600, 550);
+
+            // Download
+            const link = document.createElement('a');
+            link.download = 'og-image.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+
+</html>
