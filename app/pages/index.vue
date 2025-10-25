@@ -805,9 +805,18 @@ const toggleScoringSystem = () => {
   showScoringSystem.value = !showScoringSystem.value
 }
 
+// Import admin config
+import { ADMIN_CONFIG } from '../../config/admin.js'
+
 // Admin authentication functions
 const handleAdminLogin = () => {
-  if (loginPassword.value === 'admin123') {
+  // Kiểm tra nếu chưa set password
+  if (!ADMIN_CONFIG.PASSWORD) {
+    loginError.value = 'Chưa cấu hình password admin! Vui lòng tạo file .env.local'
+    return
+  }
+  
+  if (loginPassword.value === ADMIN_CONFIG.PASSWORD) {
     isAdmin.value = true
     showLoginModal.value = false
     loginPassword.value = ''
