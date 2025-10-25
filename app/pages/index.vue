@@ -840,11 +840,6 @@ import { ADMIN_CONFIG } from '../../config/admin.js'
 
 // Admin authentication functions
 const handleAdminLogin = () => {
-  // Kiểm tra nếu chưa set password
-  if (!ADMIN_CONFIG.PASSWORD) {
-    loginError.value = 'Chưa cấu hình password admin! Vui lòng tạo file .env.local'
-    return
-  }
   
   if (loginPassword.value === ADMIN_CONFIG.PASSWORD) {
     isAdmin.value = true

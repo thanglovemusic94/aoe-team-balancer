@@ -1,6 +1,6 @@
-// Admin configuration - Sử dụng environment variables để bảo mật
+// Admin configuration - Password khác nhau cho local và production
 export const ADMIN_CONFIG = {
-  // Password từ environment variable hoặc default
+  // Local: admin123, Production: admin1234 (từ Vercel env var)
   PASSWORD: process.env.ADMIN_PASSWORD || 'admin123',
   
   // Có thể thêm các cấu hình khác
