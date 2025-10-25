@@ -217,8 +217,8 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
   let temperature = initialTemperature
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Tạo playersToAssign mới từ sortedPlayers gốc trong mỗi attempt
-    const playersToAssign = attempt === 0 ? [...sortedPlayers] : shuffleArray([...sortedPlayers])
+    // Tạo playersToAssign mới từ sortedPlayers gốc trong mỗi attempt - LUÔN shuffle
+    const playersToAssign = shuffleArray([...sortedPlayers])
     
     const tempTeams = teams.map(team => ({
       ...team,
@@ -269,8 +269,8 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
         break
       }
       
-      // Chọn team tốt nhất dựa trên multiple constraints
-      const targetTeam = selectBestTeamForPlayer(player, availableTeams, tempTeams, targetRange)
+      // Chọn team tốt nhất dựa trên multiple constraints + thêm randomness
+      const targetTeam = selectBestTeamForPlayer(player, availableTeams, tempTeams, targetRange, attempt)
       
       targetTeam.players.push(player)
       targetTeam.totalPoints += player.rank
@@ -344,15 +344,21 @@ const balanceTeamsRandomly = async (teams, remainingPlayers, globalHighestPlayer
       temperature = Math.max(minTemperature, temperature * coolingRate)
     }
     
-    // Early stopping conditions với Simulated Annealing
+    // Early stopping conditions với Simulated Annealing - ƯU TIÊN CHÊNH LỆCH NHỎ
     if (allInRange && maxDiff <= 1 && standardDeviation < 1.0) {
       algorithmSteps.value.push(`🌟 Tìm thấy giải pháp cân bằng hoàn hảo! (SD: ${standardDeviation.toFixed(2)}, MaxDiff: ${maxDiff})`)
       break
     }
     
+    // Dừng sớm nếu chênh lệch rất nhỏ (0-1 điểm)
+    if (maxDiff <= 1 && allInRange) {
+      algorithmSteps.value.push(`🎯 Tìm thấy giải pháp với chênh lệch tối ưu! (MaxDiff: ${maxDiff})`)
+      break
+    }
+    
     // Dừng sớm nếu đã tìm được giải pháp rất tốt và nhiệt độ đã giảm đủ
-    if (attempt > 8000 && allInRange && maxDiff <= 2 && temperature < 1.0) {
-      algorithmSteps.value.push(`✅ Tìm thấy giải pháp tốt sau ${attempt} lần thử! (Temp: ${temperature.toFixed(2)})`)
+    if (attempt > 5000 && allInRange && maxDiff <= 2 && temperature < 1.0) {
+      algorithmSteps.value.push(`✅ Tìm thấy giải pháp tốt sau ${attempt} lần thử! (MaxDiff: ${maxDiff})`)
       break
     }
   }
@@ -523,20 +529,20 @@ const calculateReliabilityScore = (teamPoints, maxDiff, standardDeviation, allIn
 
 // Tính điểm tổng hợp với weighted factors
 const calculateAdvancedScore = (allInRange, variance, maxDiff, standardDeviation, reliabilityScore, categoryBalanceScore, playerCountBalanceScore) => {
-  // Các trọng số cho từng yếu tố
+  // Các trọng số cho từng yếu tố - ƯU TIÊN CHÊNH LỆCH ĐIỂM TỐI ĐA
   const weights = {
-    range: 0.3,        // Trong khoảng mục tiêu
-    variance: 0.25,    // Phương sai
-    maxDiff: 0.2,      // Chênh lệch tối đa
-    stdDev: 0.15,      // Độ lệch chuẩn
-    category: 0.05,    // Cân bằng category
+    range: 0.15,       // Trong khoảng mục tiêu
+    variance: 0.1,     // Phương sai
+    maxDiff: 0.5,      // Chênh lệch tối đa - TĂNG TRỌNG SỐ LÊN 50%
+    stdDev: 0.1,       // Độ lệch chuẩn
+    category: 0.1,     // Cân bằng category
     playerCount: 0.05  // Cân bằng số lượng người
   }
   
-  // Tính điểm cho từng yếu tố
+  // Tính điểm cho từng yếu tố - TĂNG PENALTY CHO CHÊNH LỆCH ĐIỂM
   const rangeScore = allInRange ? 0 : 1000 // Penalty lớn nếu không trong khoảng
   const varianceScore = variance * 10
-  const maxDiffScore = maxDiff * 20
+  const maxDiffScore = maxDiff * 100 // TĂNG PENALTY LÊN 100 để giảm chênh lệch xuống 1-2 điểm
   const stdDevScore = standardDeviation * 15
   const categoryScore = (100 - categoryBalanceScore) * 2
   const playerCountScore = (100 - playerCountBalanceScore) * 1
@@ -555,20 +561,23 @@ const calculateAdvancedScore = (allInRange, variance, maxDiff, standardDeviation
 }
 
 // Chọn team tốt nhất cho player dựa trên multiple constraints
-const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange) => {
+const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange, attempt = 0) => {
   let bestTeam = availableTeams[0]
   let bestScore = -Infinity
+  
+  // Thêm randomness dựa trên attempt để tạo kết quả khác nhau
+  const randomFactor = Math.random() * (attempt + 1) * 0.1
   
   for (const team of availableTeams) {
     let score = 0
     
-    // Constraint 1: Ưu tiên team có điểm thấp nhất (cân bằng điểm)
+    // Constraint 1: Ưu tiên team có điểm thấp nhất (cân bằng điểm) - TĂNG TRỌNG SỐ
     const currentPoints = team.totalPoints
     const projectedPoints = currentPoints + player.rank
     const avgPoints = allTeams.reduce((sum, t) => sum + t.totalPoints, 0) / allTeams.length
     
-    // Điểm càng thấp so với trung bình càng tốt
-    score += (avgPoints - currentPoints) * 10
+    // Điểm càng thấp so với trung bình càng tốt - TĂNG TRỌNG SỐ LÊN 50
+    score += (avgPoints - currentPoints) * 50
     
     // Constraint 2: Ưu tiên team trong khoảng mục tiêu sau khi thêm player
     if (projectedPoints >= targetRange.min && projectedPoints <= targetRange.max) {
@@ -578,6 +587,25 @@ const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange) 
       const overage = Math.max(0, projectedPoints - targetRange.max)
       const underage = Math.max(0, targetRange.min - projectedPoints)
       score -= (overage + underage) * 5
+    }
+    
+    // Constraint 2.5: Ưu tiên team giúp giảm chênh lệch điểm tối đa
+    const allTeamPoints = allTeams.map(t => t === team ? projectedPoints : t.totalPoints)
+    const maxPoints = Math.max(...allTeamPoints)
+    const minPoints = Math.min(...allTeamPoints)
+    const currentMaxDiff = maxPoints - minPoints
+    
+    // Tính chênh lệch nếu không chọn team này
+    const otherTeamPoints = allTeams.filter(t => t !== team).map(t => t.totalPoints)
+    const otherMaxPoints = Math.max(...otherTeamPoints)
+    const otherMinPoints = Math.min(...otherTeamPoints)
+    const otherMaxDiff = otherMaxPoints - otherMinPoints
+    
+    // Nếu chọn team này giúp giảm chênh lệch, thêm điểm
+    if (currentMaxDiff < otherMaxDiff) {
+      score += (otherMaxDiff - currentMaxDiff) * 30
+    } else {
+      score -= (currentMaxDiff - otherMaxDiff) * 20
     }
     
     // Constraint 3: Cân bằng category trong team
@@ -603,6 +631,9 @@ const selectBestTeamForPlayer = (player, availableTeams, allTeams, targetRange) 
     const currentPlayerCount = team.players.length
     const avgPlayerCount = allTeams.reduce((sum, t) => sum + t.players.length, 0) / allTeams.length
     score += (avgPlayerCount - currentPlayerCount) * 5
+    
+    // Thêm randomness để tạo kết quả khác nhau mỗi lần
+    score += randomFactor
     
     if (score > bestScore) {
       bestScore = score
