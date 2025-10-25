@@ -1,0 +1,28 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Game Controller Icon -->
+  <text x="600" y="200" font-family="Arial, sans-serif" font-size="120" text-anchor="middle" fill="white">🎮</text>
+  
+  <!-- Main Title -->
+  <text x="600" y="300" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="white">AOE Team Balancer</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="350" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="white" opacity="0.9">Chia Team Cân Bằng Ngẫu Nhiên</text>
+  
+  <!-- Features -->
+  <text x="300" y="450" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="white">🏛️ Trụ Cột</text>
+  <text x="600" y="450" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="white">⚖️ Trung Bình</text>
+  <text x="900" y="450" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="white">🤝 Hỗ Trợ</text>
+  
+  <!-- Bottom text -->
+  <text x="600" y="550" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="white" opacity="0.75">Thuật toán tiên tiến • Cân bằng hoàn hảo • Dễ sử dụng</text>
+</svg>

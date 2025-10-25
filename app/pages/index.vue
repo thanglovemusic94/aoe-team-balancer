@@ -675,9 +675,34 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 
-// Add Tailwind CSS
+// Add Tailwind CSS and Open Graph meta tags
 useHead({
-  title: 'AOE Team Balancer',
+  title: 'AOE Team Balancer - Chia Team Cân Bằng',
+  meta: [
+    { name: 'description', content: 'Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires với thuật toán tiên tiến. Tạo teams công bằng và thú vị cho game AOE.' },
+    { name: 'keywords', content: 'AOE, Age of Empires, chia team, team balancer, game, esports' },
+    
+    // Open Graph / Facebook
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://aoe-three.vercel.app/' },
+    { property: 'og:title', content: '🎮 AOE Team Balancer - Chia Team Cân Bằng' },
+    { property: 'og:description', content: 'Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires với thuật toán tiên tiến. Tạo teams công bằng và thú vị!' },
+    { property: 'og:image', content: 'https://aoe-three.vercel.app/og-image.png' },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { property: 'og:site_name', content: 'AOE Team Balancer' },
+    
+    // Twitter
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:url', content: 'https://aoe-three.vercel.app/' },
+    { name: 'twitter:title', content: '🎮 AOE Team Balancer - Chia Team Cân Bằng' },
+    { name: 'twitter:description', content: 'Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires với thuật toán tiên tiến. Tạo teams công bằng và thú vị!' },
+    { name: 'twitter:image', content: 'https://aoe-three.vercel.app/og-image.png' },
+    
+    // Additional meta
+    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+    { name: 'theme-color', content: '#3B82F6' }
+  ],
   script: [
     {
       src: 'https://cdn.tailwindcss.com'
