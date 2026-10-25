@@ -74,6 +74,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { gradeScale, gradeForScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: {
@@ -108,19 +109,11 @@ const getRankTextClass = (rank) => {
   return 'text-gray-600'
 }
 
-const getRankBadgeClass = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'bg-red-100 text-red-700 border border-red-300'
-  if (rank >= 7 && rank <= 16) return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-  if (rank >= 1 && rank <= 6) return 'bg-green-100 text-green-700 border border-green-300'
-  return 'bg-gray-100 text-gray-700 border border-gray-300'
-}
+const rosterScale = computed(() => gradeScale(props.players))
 
-const getRankCategory = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'Trụ Cột (A)'
-  if (rank >= 7 && rank <= 16) return 'Trung Bình (B)'
-  if (rank >= 1 && rank <= 6) return 'Hỗ Trợ (C)'
-  return 'Không xác định'
-}
+const getRankBadgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
+
+const getRankCategory = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Không xác định'
 
 const editPlayer = (player) => {
   editingPlayer.value = player

@@ -65,10 +65,8 @@
         
         <!-- Phân loại thành viên -->
         <div class="mt-4 pt-3 border-t border-gray-200">
-          <div class="flex justify-between text-xs text-gray-600">
-            <span>Trụ cột: {{ getPlayersByCategory(team.players, 'A').length }}</span>
-            <span>Trung bình: {{ getPlayersByCategory(team.players, 'B').length }}</span>
-            <span>Hỗ trợ: {{ getPlayersByCategory(team.players, 'C').length }}</span>
+          <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+            <span v-for="item in gradeSummary(team.players, gradeBands)" :key="item.id">{{ item.label }}: {{ item.count }}</span>
           </div>
         </div>
       </div>
@@ -110,6 +108,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { gradeScale, gradeForScore, gradeSummary } from '../utils/playerGrade.js'
 
 const props = defineProps({
   teams: {
@@ -119,8 +118,18 @@ const props = defineProps({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  gradeBands: {
+    type: Array,
+    default: () => []
   }
 })
+
+const gradeBands = computed(() => (
+  props.gradeBands.length
+    ? props.gradeBands
+    : gradeScale(props.teams.flatMap(team => team.players || [])).bands
+))
 
 const emit = defineEmits(['regenerate', 'require-admin'])
 
@@ -177,38 +186,11 @@ const getTeamPointsClass = (points) => {
   return 'text-red-600'
 }
 
-const getPlayerRankClass = (rank) => {
-  if (rank >= 14) return 'bg-red-100 text-red-700' // Trụ Cột: 14-17 điểm
-  if (rank >= 8) return 'bg-yellow-100 text-yellow-700' // Trung Bình: 8-13 điểm
-  return 'bg-green-100 text-green-700' // Hỗ Trợ: 1-7 điểm
-}
+const getPlayerRankClass = (rank) => gradeForScore(rank, gradeBands.value)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
 
-const getRankBadgeClass = (rank) => {
-  if (rank >= 14) return 'bg-red-100 text-red-700 border border-red-300' // Trụ Cột: 14-17 điểm
-  if (rank >= 8) return 'bg-yellow-100 text-yellow-700 border border-yellow-300' // Trung Bình: 8-13 điểm
-  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300' // Hỗ Trợ: 1-7 điểm
-  return 'bg-gray-100 text-gray-700 border border-gray-300'
-}
+const getRankBadgeClass = (rank) => getPlayerRankClass(rank)
 
-const getRankCategory = (rank) => {
-  if (rank >= 14) return 'Trụ Cột' // 14-17 điểm
-  if (rank >= 8) return 'Trung Bình' // 8-13 điểm
-  if (rank >= 1) return 'Hỗ Trợ' // 1-7 điểm
-  return 'N/A'
-}
-
-const getPlayersByCategory = (players, category) => {
-  switch (category) {
-    case 'A':
-      return players.filter(p => p.rank >= 14) // Trụ Cột: 14-17 điểm
-    case 'B':
-      return players.filter(p => p.rank >= 8 && p.rank < 14) // Trung Bình: 8-13 điểm
-    case 'C':
-      return players.filter(p => p.rank >= 1 && p.rank < 8) // Hỗ Trợ: 1-7 điểm
-    default:
-      return []
-  }
-}
+const getRankCategory = (rank) => gradeForScore(rank, gradeBands.value)?.label || 'N/A'
 
 // Sắp xếp players trong team: Trụ Cột → Trung Bình → Hỗ Trợ
 const getSortedPlayersForTeam = (players) => {

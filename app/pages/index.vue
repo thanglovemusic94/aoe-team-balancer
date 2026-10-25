@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="container mx-auto px-4 py-8">
              <header class="text-center mb-8">
-               <div class="flex justify-between items-center mb-4">
+               <div v-if="loginEnabled" class="flex justify-between items-center mb-4">
                  <div></div>
                  <div class="flex items-center space-x-4">
                    <div v-if="isAdmin" class="flex items-center space-x-2">
@@ -50,104 +50,19 @@
                  <!-- Nội dung có thể thu gọn -->
                  <div v-show="showScoringSystem" class="px-6 pb-6">
                  
-                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                   <!-- Trụ Cột -->
-                   <div class="bg-gradient-to-br from-red-50 to-red-100 border-3 border-red-300 rounded-xl p-5 shadow-md hover:shadow-lg transition-shadow">
-                     <div class="text-center mb-4">
-                       <div class="text-5xl mb-3">🏛️</div>
-                       <h3 class="text-xl font-bold text-red-800 mb-2">Trụ Cột (A)</h3>
-                       <div class="inline-block bg-red-200 px-4 py-1 rounded-full">
-                         <span class="text-red-800 font-semibold">Điểm: 14-17</span>
-                       </div>
-                       <div class="mt-4 p-3 bg-red-200 rounded-xl">
-                         <div class="text-4xl font-bold text-red-900">{{ getCategoryCount('A') }}</div>
-                         <div class="text-sm text-red-700 font-medium">người chơi</div>
-                       </div>
-                     </div>
-                     <div class="bg-white/60 rounded-lg p-3 space-y-2">
-                       <div class="flex items-start gap-2">
-                         <span class="text-red-600 mt-0.5">💪</span>
-                         <span class="text-sm text-gray-800">Người chơi mạnh nhất</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-red-600 mt-0.5">🎯</span>
-                         <span class="text-sm text-gray-800">Khả năng gánh team cao</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-red-600 mt-0.5">⭐</span>
-                         <span class="text-sm text-gray-800">Kinh nghiệm dày dặn</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-red-600 mt-0.5">👑</span>
-                         <span class="text-sm text-gray-800">Lãnh đạo chiến thuật</span>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <!-- Trung Bình -->
-                   <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 border-3 border-yellow-300 rounded-xl p-5 shadow-md hover:shadow-lg transition-shadow">
-                     <div class="text-center mb-4">
-                       <div class="text-5xl mb-3">⚖️</div>
-                       <h3 class="text-xl font-bold text-yellow-800 mb-2">Trung Bình (B)</h3>
-                       <div class="inline-block bg-yellow-200 px-4 py-1 rounded-full">
-                         <span class="text-yellow-800 font-semibold">Điểm: 8-13</span>
-                       </div>
-                       <div class="mt-4 p-3 bg-yellow-200 rounded-xl">
-                         <div class="text-4xl font-bold text-yellow-900">{{ getCategoryCount('B') }}</div>
-                         <div class="text-sm text-yellow-700 font-medium">người chơi</div>
-                       </div>
-                     </div>
-                     <div class="bg-white/60 rounded-lg p-3 space-y-2">
-                       <div class="flex items-start gap-2">
-                         <span class="text-yellow-600 mt-0.5">✅</span>
-                         <span class="text-sm text-gray-800">Kỹ năng ổn định</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-yellow-600 mt-0.5">🤝</span>
-                         <span class="text-sm text-gray-800">Hỗ trợ hiệu quả</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-yellow-600 mt-0.5">📋</span>
-                         <span class="text-sm text-gray-800">Thực hiện chiến thuật</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-yellow-600 mt-0.5">🎭</span>
-                         <span class="text-sm text-gray-800">Cân bằng team</span>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <!-- Hỗ Trợ -->
-                   <div class="bg-gradient-to-br from-green-50 to-green-100 border-3 border-green-300 rounded-xl p-5 shadow-md hover:shadow-lg transition-shadow">
-                     <div class="text-center mb-4">
-                       <div class="text-5xl mb-3">🤝</div>
-                       <h3 class="text-xl font-bold text-green-800 mb-2">Hỗ Trợ (C)</h3>
-                       <div class="inline-block bg-green-200 px-4 py-1 rounded-full">
-                         <span class="text-green-800 font-semibold">Điểm: 1-7</span>
-                       </div>
-                       <div class="mt-4 p-3 bg-green-200 rounded-xl">
-                         <div class="text-4xl font-bold text-green-900">{{ getCategoryCount('C') }}</div>
-                         <div class="text-sm text-green-700 font-medium">người chơi</div>
-                       </div>
-                     </div>
-                     <div class="bg-white/60 rounded-lg p-3 space-y-2">
-                       <div class="flex items-start gap-2">
-                         <span class="text-green-600 mt-0.5">🌱</span>
-                         <span class="text-sm text-gray-800">Người chơi mới</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-green-600 mt-0.5">📚</span>
-                         <span class="text-sm text-gray-800">Học hỏi kinh nghiệm</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-green-600 mt-0.5">🛠️</span>
-                         <span class="text-sm text-gray-800">Hỗ trợ cơ bản</span>
-                       </div>
-                       <div class="flex items-start gap-2">
-                         <span class="text-green-600 mt-0.5">📈</span>
-                         <span class="text-sm text-gray-800">Phát triển kỹ năng</span>
-                       </div>
-                     </div>
+                 <p v-if="rosterScale.min != null" class="text-sm text-gray-600 text-center mb-4">
+                   Hạng chia theo điểm hiện tại: thấp nhất {{ rosterScale.min }}, cao nhất {{ rosterScale.max }}.
+                 </p>
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                   <div
+                     v-for="grade in rosterScale.bands"
+                     :key="grade.id"
+                     class="rounded-xl border bg-white p-4 text-center shadow-sm"
+                   >
+                     <div class="text-2xl font-bold" :class="grade.textClass">{{ grade.label }}</div>
+                     <div class="text-sm text-gray-500 mb-2">{{ grade.rangeLabel }} điểm</div>
+                     <div class="text-3xl font-bold text-gray-800">{{ countByGrade(rankedPlayers, grade.id, rosterScale.bands) }}</div>
+                     <div class="text-xs text-gray-500">người chơi</div>
                    </div>
                  </div>
                  
@@ -519,11 +434,11 @@
       <main>
         <!-- Tab Navigation -->
         <div class="mb-8">
-          <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mx-auto">
+          <div class="flex flex-wrap justify-center gap-1 bg-gray-100 p-1 rounded-lg max-w-5xl mx-auto">
             <button
               @click="switchToTab('teams')"
               :class="[
-                'px-6 py-3 rounded-md font-medium transition-colors',
+                'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'teams' 
                   ? 'bg-white text-blue-600 shadow-sm' 
                   : 'text-gray-600 hover:text-gray-800'
@@ -532,9 +447,42 @@
               🎰 Chia Team Cân Bằng Ngẫu Nhiên
             </button>
             <button
+              @click="switchToTab('eight')"
+              :class="[
+                'px-4 py-3 rounded-md font-medium transition-colors',
+                activeTab === 'eight'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              ]"
+            >
+              🎯 Chọn 8 người chia 4v4
+            </button>
+            <button
+              @click="switchToTab('twos')"
+              :class="[
+                'px-4 py-3 rounded-md font-medium transition-colors',
+                activeTab === 'twos'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              ]"
+            >
+              ⚔️ Chọn danh sách chia 2v2
+            </button>
+            <button
+              @click="switchToTab('compare')"
+              :class="[
+                'px-4 py-3 rounded-md font-medium transition-colors',
+                activeTab === 'compare'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              ]"
+            >
+              ⚖️ So sánh 2 đội
+            </button>
+            <button
               @click="switchToTab('players')"
               :class="[
-                'px-6 py-3 rounded-md font-medium transition-colors',
+                'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'players' 
                   ? 'bg-white text-blue-600 shadow-sm' 
                   : 'text-gray-600 hover:text-gray-800'
@@ -547,7 +495,7 @@
 
 
                <!-- Thông báo khi không phải admin -->
-               <div v-if="!isAdmin" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+               <div v-if="!isAdmin && activeTab !== 'eight' && activeTab !== 'twos' && activeTab !== 'compare'" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                  <div class="text-yellow-700 text-sm">
                    <span class="font-semibold">⚠️ Chế độ xem chỉ đọc:</span> 
                    Bạn đang xem dữ liệu ở chế độ chỉ đọc. Để thực hiện các thao tác thay đổi dữ liệu, vui lòng đăng nhập với tài khoản admin.
@@ -558,23 +506,23 @@
         <div v-if="activeTab === 'teams'" class="space-y-8">
           <!-- Team Balancer và Results -->
           <TeamBalancer 
-            v-if="players.length >= 4 && players.length % 4 === 0" 
+            v-if="rankedPlayers.length >= 4 && rankedPlayers.length % 4 === 0" 
             :key="regenerateKey"
-            :players="players"
+            :players="rankedPlayers"
             :existing-teams="teams"
             :is-admin="isAdmin"
             @teams-generated="handleTeamsGenerated"
             @require-admin="handleRequireAdmin"
           />
-                 <TeamResults v-if="teams.length > 0" :teams="teams" :is-admin="isAdmin" @regenerate="handleRegenerate" @require-admin="handleRequireAdmin" />
+                 <TeamResults v-if="teams.length > 0" :teams="teams" :grade-bands="rosterScale.bands" :is-admin="isAdmin" @regenerate="handleRegenerate" @require-admin="handleRequireAdmin" />
           
           <!-- Thông báo nếu chưa có đủ người chơi -->
-          <div v-if="players.length < 4" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <div v-if="rankedPlayers.length < 4" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
             <div class="text-yellow-600 text-lg font-semibold mb-2">
               ⚠️ Chưa đủ người chơi để chia team
             </div>
             <p class="text-yellow-700 mb-4">
-              Hiện tại có {{ players.length }} người chơi. Vui lòng chuyển sang tab "Nhập Danh Sách Người Chơi" để thêm ít nhất 4 người (phải chia hết cho 4).
+              Hiện tại có {{ rankedPlayers.length }} người chơi đã có điểm. Vui lòng chuyển sang tab "Nhập Danh Sách Người Chơi" để thêm ít nhất 4 người (phải chia hết cho 4).
             </p>
             <button
               @click="switchToTab('players')"
@@ -585,18 +533,84 @@
           </div>
           
           <!-- Thông báo nếu số người chơi không chia hết cho 4 -->
-          <div v-else-if="players.length % 4 !== 0" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+          <div v-else-if="rankedPlayers.length % 4 !== 0" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
             <div class="text-orange-600 text-lg font-semibold mb-2">
               ⚠️ Số người chơi không hợp lệ
             </div>
             <p class="text-orange-700 mb-4">
-              Hiện tại có {{ players.length }} người chơi. Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Vui lòng thêm hoặc xóa người chơi.
+              Hiện tại có {{ rankedPlayers.length }} người chơi đã có điểm. Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Vui lòng thêm hoặc xóa người chơi.
             </p>
             <button
               @click="switchToTab('players')"
               class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
             >
               👥 Chuyển đến nhập danh sách
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'compare'" class="space-y-8">
+          <TeamCompare
+            v-if="namedPlayers.length >= 4"
+            :players="namedPlayers"
+          />
+          <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <div class="text-yellow-600 text-lg font-semibold mb-2">
+              Chưa đủ người để so sánh
+            </div>
+            <p class="text-yellow-700 mb-4">
+              Hiện có {{ namedPlayers.length }} người. Cần ít nhất 4 người để so một trận 2v2.
+            </p>
+            <button
+              @click="switchToTab('players')"
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Chuyển đến nhập danh sách
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'twos'" class="space-y-8">
+          <TwoVsTwoBalancer
+            v-if="namedPlayers.length >= 4"
+            :players="namedPlayers"
+            @rank-change="updatePlayerRank"
+          />
+          <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <div class="text-yellow-600 text-lg font-semibold mb-2">
+              Chưa đủ người để chia 2v2
+            </div>
+            <p class="text-yellow-700 mb-4">
+              Hiện có {{ namedPlayers.length }} người. Cần ít nhất 4 người trong danh sách.
+            </p>
+            <button
+              @click="switchToTab('players')"
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Chuyển đến nhập danh sách
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'eight'" class="space-y-8">
+          <EightPlayerBalancer
+            v-if="namedPlayers.length >= 8"
+            :players="namedPlayers"
+            :preset-names="lobbyPlayerNames"
+            @rank-change="updatePlayerRank"
+          />
+          <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <div class="text-yellow-600 text-lg font-semibold mb-2">
+              Chưa đủ 8 người có điểm để chọn
+            </div>
+            <p class="text-yellow-700 mb-4">
+              Hiện có {{ namedPlayers.length }} người trong danh sách. Cần ít nhất 8 người.
+            </p>
+            <button
+              @click="switchToTab('players')"
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Chuyển đến nhập danh sách
             </button>
           </div>
         </div>
@@ -632,7 +646,7 @@
          </div>
 
          <!-- Admin Login Modal -->
-         <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+         <div v-if="loginEnabled && showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
            <div class="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
              <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
                🔐 Đăng nhập Admin
@@ -673,7 +687,8 @@
        </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { gradeScale, countByGrade } from '../utils/playerGrade.js'
 
 // Add Tailwind CSS and Open Graph meta tags
 useHead({
@@ -715,15 +730,30 @@ useHead({
   ]
 })
 
+const lobbyPlayerNames = [
+  'nnn6789',
+  'ThinhBM',
+  '1DanXayDeChe',
+  'GT_SonBay_HaNoi',
+  'anhloix4',
+  'Ut_Pham_XinhDep',
+  'chemthue199x',
+  'Fioruna'
+]
+
 const players = ref([])
 const teams = ref([])
+const namedPlayers = computed(() => players.value.filter(player => player && player.name))
+const rankedPlayers = computed(() => namedPlayers.value.filter(player => player.rank))
+const rosterScale = computed(() => gradeScale(rankedPlayers.value))
 const regenerateKey = ref(0)
 const activeTab = ref('teams') // Mặc định là tab "Chia Team"
 const isInitialLoad = ref(true) // Flag để kiểm tra lần load đầu tiên
 const showScoringSystem = ref(false) // Flag để thu gọn phần Hệ Thống Chấm Điểm
 
-// Admin authentication
-const isAdmin = ref(false)
+// Tạm tắt đăng nhập: đổi thành true khi muốn bật lại mật khẩu admin
+const loginEnabled = false
+const isAdmin = ref(!loginEnabled)
 const showLoginModal = ref(false)
 const loginPassword = ref('')
 const loginError = ref('')
@@ -731,10 +761,9 @@ const loginError = ref('')
 // Load data from localStorage on mount
 onMounted(() => {
   if (process.client) {
-    // Check admin status
-    const adminStatus = localStorage.getItem('aoe_admin')
-    if (adminStatus === 'true') {
-      isAdmin.value = true
+    if (loginEnabled) {
+      const adminStatus = localStorage.getItem('aoe_admin')
+      isAdmin.value = adminStatus === 'true'
     }
 
     const savedPlayers = localStorage.getItem('aoe_players')
@@ -747,6 +776,8 @@ onMounted(() => {
         console.error('Error loading players:', e)
       }
     }
+
+    players.value = mergeLobbyPlayers(players.value)
 
     if (savedTeams) {
       try {
@@ -799,6 +830,12 @@ const handlePlayersUpdate = (updatedPlayers) => {
   teams.value = []
 }
 
+const updatePlayerRank = ({ name, rank }) => {
+  const index = players.value.findIndex(player => player && player.name === name)
+  if (index < 0) return
+  players.value[index] = { ...players.value[index], rank }
+}
+
 const handleTeamsGenerated = (generatedTeams) => {
   teams.value = generatedTeams
 }
@@ -816,6 +853,9 @@ const handleRegenerate = () => {
 
 const switchToTab = (tabName) => {
   activeTab.value = tabName
+  if (tabName === 'eight' || tabName === 'twos' || tabName === 'compare') {
+    showLoginModal.value = false
+  }
 }
 
 const resetTabLogic = () => {
@@ -870,7 +910,19 @@ const handleAdminLogout = () => {
   
 }
 
+const mergeLobbyPlayers = (list) => {
+  const merged = Array.isArray(list) ? [...list] : []
+  const existing = new Set(merged.map(player => (player?.name || '').trim().toLowerCase()))
+  for (const name of lobbyPlayerNames) {
+    if (!existing.has(name.toLowerCase())) {
+      merged.push({ name, rank: null })
+    }
+  }
+  return merged
+}
+
 const requireAdmin = (action) => {
+  if (!loginEnabled) return true
   if (!isAdmin.value) {
     showLoginModal.value = true
     return false
@@ -879,20 +931,8 @@ const requireAdmin = (action) => {
 }
 
 const handleRequireAdmin = (action) => {
+  if (!loginEnabled) return
   showLoginModal.value = true
-}
-
-// Hàm tính số lượng người chơi theo category
-const getCategoryCount = (category) => {
-  return players.value.filter(player => {
-    if (!player.rank) return false
-    switch (category) {
-      case 'A': return player.rank >= 14 // Trụ Cột: 14-17 điểm
-      case 'B': return player.rank >= 8 && player.rank < 14 // Trung Bình: 8-13 điểm
-      case 'C': return player.rank >= 1 && player.rank < 8 // Hỗ Trợ: 1-7 điểm
-      default: return false
-    }
-  }).length
 }
 
 // Hàm tính điểm trung bình

@@ -118,22 +118,18 @@
     
     <!-- Thống kê -->
     <div v-if="playerCount > 0" class="mt-4 p-4 bg-gray-50 rounded-lg">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div class="text-center">
-          <div class="font-semibold text-gray-700">Tổng người chơi</div>
-          <div class="text-lg font-bold text-blue-600">{{ playerCount }} người</div>
-        </div>
-        <div class="text-center">
-          <div class="font-semibold text-gray-700">Trụ Cột (A)</div>
-          <div class="text-lg font-bold text-red-600">{{ getCategoryCount('A') }}</div>
-        </div>
-        <div class="text-center">
-          <div class="font-semibold text-gray-700">Trung Bình (B)</div>
-          <div class="text-lg font-bold text-yellow-600">{{ getCategoryCount('B') }}</div>
-        </div>
-        <div class="text-center">
-          <div class="font-semibold text-gray-700">Hỗ Trợ (C)</div>
-          <div class="text-lg font-bold text-green-600">{{ getCategoryCount('C') }}</div>
+      <div class="text-center mb-3">
+        <div class="font-semibold text-gray-700">Tổng người chơi</div>
+        <div class="text-lg font-bold text-blue-600">{{ playerCount }} người</div>
+      </div>
+      <p v-if="rosterScale.min != null" class="text-center text-xs text-gray-500 mb-3">
+        Loại tính từ điểm thấp nhất {{ rosterScale.min }} đến cao nhất {{ rosterScale.max }}
+      </p>
+      <div class="grid grid-cols-4 md:grid-cols-8 gap-2 text-sm">
+        <div v-for="grade in rosterScale.bands" :key="grade.id" class="text-center">
+          <div class="font-semibold" :class="grade.textClass">{{ grade.label }}</div>
+          <div class="text-xs text-gray-500">{{ grade.rangeLabel }}</div>
+          <div class="text-lg font-bold text-gray-800">{{ countByGrade(players, grade.id, rosterScale.bands) }}</div>
         </div>
       </div>
     </div>
@@ -240,6 +236,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { gradeScale, gradeForScore, countByGrade } from '../utils/playerGrade.js'
 
 const props = defineProps({
   existingPlayers: {
@@ -494,35 +491,11 @@ const fillRandomPlayer = (index) => {
 }
 
 // Lấy class cho badge category
-const getRankBadgeClass = (rank) => {
-  if (!rank) return 'bg-gray-100 text-gray-700 border border-gray-300'
-  if (rank >= 14) return 'bg-red-100 text-red-700 border border-red-300' // Trụ Cột: 14-17 điểm
-  if (rank >= 8) return 'bg-yellow-100 text-yellow-700 border border-yellow-300' // Trung Bình: 8-13 điểm
-  if (rank >= 1) return 'bg-green-100 text-green-700 border border-green-300' // Hỗ Trợ: 1-7 điểm
-  return 'bg-gray-100 text-gray-700 border border-gray-300'
-}
+const rosterScale = computed(() => gradeScale(players.value))
 
-// Lấy category của rank
-const getRankCategory = (rank) => {
-  if (!rank) return 'N/A'
-  if (rank >= 14) return 'Trụ Cột' // 14-17 điểm
-  if (rank >= 8) return 'Trung Bình' // 8-13 điểm
-  if (rank >= 1) return 'Hỗ Trợ' // 1-7 điểm
-  return 'N/A'
-}
+const getRankBadgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
 
-// Đếm số lượng người chơi theo category
-const getCategoryCount = (category) => {
-  return players.value.filter(player => {
-    if (!player.rank) return false
-    switch (category) {
-      case 'A': return player.rank >= 14 // Trụ Cột: 14-17 điểm
-      case 'B': return player.rank >= 8 && player.rank < 14 // Trung Bình: 8-13 điểm
-      case 'C': return player.rank >= 1 && player.rank < 8 // Hỗ Trợ: 1-7 điểm
-      default: return false
-    }
-  }).length
-}
+const getRankCategory = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'N/A'
 
 const addPlayers = () => {
   if (!requireAdminForAction('xác nhận danh sách người chơi')) return
