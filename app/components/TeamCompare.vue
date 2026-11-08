@@ -2,7 +2,7 @@
   <div class="bg-white rounded-lg shadow-lg p-6">
     <h2 class="text-2xl font-semibold text-gray-800 mb-2">So sánh 2 đội</h2>
     <p class="text-gray-600 mb-4">
-      Chọn đủ người cho mỗi đội rồi xem đội nào có tổng điểm cao hơn. 2v2 là 2 người mỗi đội, 4v4 là 4 người mỗi đội.
+      Chọn đủ người cho mỗi đội rồi xem đội nào có tổng điểm cao hơn. 2v2 là 2 người, 3v3 là 3 người, 4v4 là 4 người mỗi đội.
     </p>
 
     <div class="flex flex-wrap gap-2 mb-4">
@@ -12,6 +12,14 @@
         :class="teamSize === 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'"
       >
         2v2
+      </button>
+      <button
+        @click="setMode(3)"
+        class="px-4 py-2 rounded-lg font-medium"
+        :class="teamSize === 3 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'"
+        :disabled="rankedCount < 6"
+      >
+        3v3
       </button>
       <button
         @click="setMode(4)"
@@ -31,7 +39,10 @@
         Xóa hai đội
       </button>
     </div>
-    <p v-if="rankedCount < 8" class="text-sm text-amber-700 mb-4">
+    <p v-if="rankedCount < 6" class="text-sm text-amber-700 mb-4">
+      Cần ít nhất 6 người đã có điểm để so 3v3, và 8 người để so 4v4. Hiện có {{ rankedCount }} người có điểm.
+    </p>
+    <p v-else-if="rankedCount < 8" class="text-sm text-amber-700 mb-4">
       Cần ít nhất 8 người đã có điểm để so 4v4. Hiện có {{ rankedCount }} người có điểm.
     </p>
 
@@ -245,6 +256,7 @@ const clearTeams = () => {
 
 const setMode = (size) => {
   if (size === teamSize.value) return
+  if (size === 3 && rankedCount.value < 6) return
   if (size === 4 && rankedCount.value < 8) return
   teamSize.value = size
   clearTeams()

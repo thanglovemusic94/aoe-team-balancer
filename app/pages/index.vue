@@ -469,6 +469,17 @@
               ⚔️ Chọn danh sách chia 2v2
             </button>
             <button
+              @click="switchToTab('threes')"
+              :class="[
+                'px-4 py-3 rounded-md font-medium transition-colors',
+                activeTab === 'threes'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              ]"
+            >
+              🛡️ Chọn danh sách chia 3v3
+            </button>
+            <button
               @click="switchToTab('compare')"
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
@@ -495,7 +506,7 @@
 
 
                <!-- Thông báo khi không phải admin -->
-               <div v-if="!isAdmin && activeTab !== 'eight' && activeTab !== 'twos' && activeTab !== 'compare'" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+               <div v-if="!isAdmin && activeTab !== 'eight' && activeTab !== 'twos' && activeTab !== 'threes' && activeTab !== 'compare'" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                  <div class="text-yellow-700 text-sm">
                    <span class="font-semibold">⚠️ Chế độ xem chỉ đọc:</span> 
                    Bạn đang xem dữ liệu ở chế độ chỉ đọc. Để thực hiện các thao tác thay đổi dữ liệu, vui lòng đăng nhập với tài khoản admin.
@@ -560,6 +571,28 @@
             </div>
             <p class="text-yellow-700 mb-4">
               Hiện có {{ namedPlayers.length }} người. Cần ít nhất 4 người để so một trận 2v2.
+            </p>
+            <button
+              @click="switchToTab('players')"
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Chuyển đến nhập danh sách
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'threes'" class="space-y-8">
+          <ThreeVsThreeBalancer
+            v-if="namedPlayers.length >= 6"
+            :players="namedPlayers"
+            @rank-change="updatePlayerRank"
+          />
+          <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <div class="text-yellow-600 text-lg font-semibold mb-2">
+              Chưa đủ người để chia 3v3
+            </div>
+            <p class="text-yellow-700 mb-4">
+              Hiện có {{ namedPlayers.length }} người. Cần ít nhất 6 người trong danh sách.
             </p>
             <button
               @click="switchToTab('players')"
@@ -853,7 +886,7 @@ const handleRegenerate = () => {
 
 const switchToTab = (tabName) => {
   activeTab.value = tabName
-  if (tabName === 'eight' || tabName === 'twos' || tabName === 'compare') {
+  if (tabName === 'eight' || tabName === 'twos' || tabName === 'threes' || tabName === 'compare') {
     showLoginModal.value = false
   }
 }
