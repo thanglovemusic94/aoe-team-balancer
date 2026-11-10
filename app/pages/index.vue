@@ -533,7 +533,7 @@
               ⚠️ Chưa đủ người chơi để chia team
             </div>
             <p class="text-yellow-700 mb-4">
-              Hiện tại có {{ rankedPlayers.length }} người chơi đã có điểm. Vui lòng chuyển sang tab "Nhập Danh Sách Người Chơi" để thêm ít nhất 4 người (phải chia hết cho 4).
+              Hiện tại có {{ rankedPlayers.length }} người chơi đã có điểm. Chia ngẫu nhiên cả danh sách cần ít nhất 4 người, mỗi đội 4 người.
             </p>
             <button
               @click="switchToTab('players')"
@@ -546,10 +546,10 @@
           <!-- Thông báo nếu số người chơi không chia hết cho 4 -->
           <div v-else-if="rankedPlayers.length % 4 !== 0" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
             <div class="text-orange-600 text-lg font-semibold mb-2">
-              ⚠️ Số người chơi không hợp lệ
+              Chia ngẫu nhiên cả danh sách cần số người chia hết cho 4
             </div>
             <p class="text-orange-700 mb-4">
-              Hiện tại có {{ rankedPlayers.length }} người chơi đã có điểm. Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Vui lòng thêm hoặc xóa người chơi.
+              Hiện có {{ rankedPlayers.length }} người đã có điểm. Tab này xếp mọi người thành các đội 4 người. Danh sách 2v2 và 3v3 vẫn dùng được: vào tab tương ứng rồi chọn đúng số người.
             </p>
             <button
               @click="switchToTab('players')"
@@ -659,19 +659,29 @@
                  />
           
           <!-- Thông báo khi đã có đủ người chơi -->
-          <div v-if="players.length >= 4 && players.length % 4 === 0" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <div v-if="players.length > 0" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
             <div class="text-green-600 text-lg font-semibold mb-2">
-              ✅ Đã có đủ {{ players.length }} người chơi!
+              ✅ Đã có {{ players.length }} người chơi
             </div>
             <p class="text-green-700 mb-4">
-              Bạn có thể chuyển sang tab "Chia Team Cân Bằng Ngẫu Nhiên" để bắt đầu chia team ({{ Math.floor(players.length / 4) }} teams).
+              Danh sách dùng chung cho mọi kiểu chia. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 6, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
             </p>
-            <button
-              @click="switchToTab('teams')"
-              class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-            >
-              🎰 Chuyển đến chia team
-            </button>
+            <div class="flex flex-wrap justify-center gap-2">
+              <button
+                v-if="rankedPlayers.length >= 6"
+                @click="switchToTab('threes')"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                Chia 3v3
+              </button>
+              <button
+                v-if="rankedPlayers.length >= 4 && rankedPlayers.length % 4 === 0"
+                @click="switchToTab('teams')"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                Chia ngẫu nhiên cả danh sách
+              </button>
+            </div>
           </div>
                </div>
              </main>
@@ -822,12 +832,8 @@ onMounted(() => {
     
     // Chỉ chuyển tab khi load lần đầu và thực sự cần thiết
     if (players.value.length === 0) {
-      activeTab.value = 'players' // Nếu chưa có người chơi, chuyển sang tab nhập
-    } else if (players.value.length < 28) {
-      activeTab.value = 'players' // Nếu chưa đủ 28 người, chuyển sang tab nhập
+      activeTab.value = 'players'
     }
-    // Nếu đã có đủ 28 người, giữ tab mặc định (teams)
-    // Không tự động chuyển để tránh xung đột
     
     // Đánh dấu đã hoàn thành load ban đầu
     isInitialLoad.value = false
@@ -894,8 +900,6 @@ const switchToTab = (tabName) => {
 const resetTabLogic = () => {
   // Reset tab logic based on current data
   if (players.value.length === 0) {
-    activeTab.value = 'players'
-  } else if (players.value.length < 4 || players.value.length % 4 !== 0) {
     activeTab.value = 'players'
   } else {
     activeTab.value = 'teams'

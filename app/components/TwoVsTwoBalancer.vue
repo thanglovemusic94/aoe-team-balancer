@@ -98,11 +98,10 @@
           </p>
         </div>
         <button
-          v-if="result.optionCount > 1"
           @click="randomizeAmongBest"
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
         >
-          Đổi phương án khác cùng mức
+          {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
         </button>
       </div>
 
@@ -147,6 +146,12 @@
         </div>
       </div>
     </div>
+    <FortuneWheel
+      v-if="wheel"
+      :players="wheel.players"
+      :teams="wheel.teams"
+      @close="wheel = null"
+    />
   </div>
 </template>
 
@@ -165,6 +170,7 @@ const query = ref('')
 const selectedKeys = ref([])
 const options = ref([])
 const result = ref(null)
+const wheel = ref(null)
 const isSplitting = ref(false)
 
 const keyedPlayers = computed(() =>
@@ -264,9 +270,33 @@ const generate = () => {
   isSplitting.value = false
 }
 
+const openWheel = (matches) => {
+  const teams = matches.flatMap((match, index) => [
+    { id: `${index}-A`, name: `Trận ${index + 1} · Đội A`, players: match.teamA.players },
+    { id: `${index}-B`, name: `Trận ${index + 1} · Đội B`, players: match.teamB.players }
+  ])
+  wheel.value = {
+    players: teams.flatMap(team => team.players),
+    teams
+  }
+}
+
+const optionSignature = (matches) => matches.map(match => {
+  const names = side => side.players.map(player => player._key).sort().join('|')
+  const left = names(match.teamA)
+  const right = names(match.teamB)
+  return left < right ? `${left}#${right}` : `${right}#${left}`
+}).sort().join('||')
+
 const randomizeAmongBest = () => {
-  if (options.value.length === 0 || !result.value) return
-  const pick = options.value[Math.floor(Math.random() * options.value.length)]
-  applyOption(pick, { exact: result.value.exact, options: options.value })
+  if (!result.value) return
+  if (options.value.length > 1) {
+    const current = optionSignature(result.value.matches)
+    const others = options.value.filter(option => optionSignature(option.matches) !== current)
+    const pool = others.length > 0 ? others : options.value
+    const pick = pool[Math.floor(Math.random() * pool.length)]
+    applyOption(pick, { exact: result.value.exact, options: options.value })
+  }
+  openWheel(result.value.matches)
 }
 </script>

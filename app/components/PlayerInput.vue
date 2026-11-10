@@ -28,6 +28,12 @@
       </p>
       <div class="flex justify-center space-x-2">
         <button
+          @click="addMorePlayers(1)"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          ➕ Thêm 1 người
+        </button>
+        <button
           @click="addMorePlayers(4)"
           class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
         >
@@ -160,6 +166,14 @@
       <!-- Nút thêm người chơi và sắp xếp -->
       <div class="flex flex-wrap gap-2 items-center">
         <span class="text-sm font-medium text-gray-700">Thêm người chơi:</span>
+        <button
+          @click="addMorePlayers(1)"
+          :disabled="!isAdmin"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+          :class="{ 'opacity-50 cursor-not-allowed': !isAdmin }"
+        >
+          ➕ Thêm 1 người
+        </button>
         <button
           @click="addMorePlayers(4)"
           :disabled="!isAdmin"
@@ -506,18 +520,11 @@ const addPlayers = () => {
   // Filter out empty players
   const validPlayers = players.value.filter(p => p.name && p.rank)
   
-  // Check minimum count (phải có ít nhất 4 người để chia team)
-  if (validPlayers.length < 4) {
-    error.value = `Vui lòng nhập ít nhất 4 người chơi để chia team. Hiện tại: ${validPlayers.length} người.`
+  if (validPlayers.length < 1) {
+    error.value = 'Vui lòng nhập ít nhất 1 người chơi có tên và điểm.'
     return
   }
-  
-  // Check if count is divisible by 4 (mỗi team có 4 người)
-  if (validPlayers.length % 4 !== 0) {
-    error.value = `Số người chơi phải chia hết cho 4 (mỗi team có 4 người). Hiện tại: ${validPlayers.length} người.`
-    return
-  }
-  
+
   // Validate rank range (chỉ check min, không giới hạn max)
   const invalidRank = validPlayers.find(p => p.rank < 1)
   if (invalidRank) {
@@ -539,8 +546,7 @@ const addPlayers = () => {
     rank: p.rank
   }))
   
-  const teamCount = Math.floor(formattedPlayers.length / 4)
-  success.value = `✅ Đã xác nhận ${formattedPlayers.length} người chơi (chia thành ${teamCount} teams)!`
+  success.value = `✅ Đã xác nhận ${formattedPlayers.length} người chơi.`
   emit('players-submitted', formattedPlayers)
 }
 </script>

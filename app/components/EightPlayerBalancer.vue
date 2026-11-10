@@ -100,11 +100,10 @@
           </p>
         </div>
         <button
-          v-if="result.optionCount > 1"
           @click="randomizeAmongBest"
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
         >
-          Đổi phương án khác cùng mức
+          {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
         </button>
       </div>
 
@@ -152,6 +151,12 @@
         </div>
       </div>
     </div>
+    <FortuneWheel
+      v-if="wheel"
+      :players="wheel.players"
+      :teams="wheel.teams"
+      @close="wheel = null"
+    />
   </div>
 </template>
 
@@ -170,6 +175,7 @@ const query = ref('')
 const selectedKeys = ref([])
 const bestSplits = ref([])
 const result = ref(null)
+const wheel = ref(null)
 const isSplitting = ref(false)
 const appliedPreset = ref(false)
 
@@ -364,9 +370,32 @@ const generateTwoTeams = () => {
   isSplitting.value = false
 }
 
+const openWheel = (teamA, teamB) => {
+  wheel.value = {
+    players: [...teamA.players, ...teamB.players],
+    teams: [
+      { id: 'A', name: 'Đội A', players: teamA.players },
+      { id: 'B', name: 'Đội B', players: teamB.players }
+    ]
+  }
+}
+
+const splitSignature = (teamA, teamB) => {
+  const keyOf = players => players.map(player => player._key).sort().join('|')
+  const left = keyOf(teamA)
+  const right = keyOf(teamB)
+  return left < right ? `${left}#${right}` : `${right}#${left}`
+}
+
 const randomizeAmongBest = () => {
-  if (bestSplits.value.length === 0) return
-  const pick = bestSplits.value[Math.floor(Math.random() * bestSplits.value.length)]
-  applySplit(pick, result.value?.examined || bestSplits.value.length, bestSplits.value.length)
+  if (!result.value) return
+  if (bestSplits.value.length > 1) {
+    const current = splitSignature(result.value.teamA.players, result.value.teamB.players)
+    const others = bestSplits.value.filter(pick => splitSignature(pick.teamA, pick.teamB) !== current)
+    const pool = others.length > 0 ? others : bestSplits.value
+    const pick = pool[Math.floor(Math.random() * pool.length)]
+    applySplit(pick, result.value.examined || bestSplits.value.length, bestSplits.value.length)
+  }
+  openWheel(result.value.teamA, result.value.teamB)
 }
 </script>
