@@ -99,15 +99,26 @@
             <span v-if="result.optionCount > 1"> · {{ result.optionCount }} phương án cùng mức</span>
           </p>
         </div>
-        <button
-          @click="randomizeAmongBest"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-        >
-          {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-if="undoStack.length"
+            @click="undoSplit"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+          >
+            Quay lại
+          </button>
+          <button
+            @click="randomizeAmongBest"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+          >
+            {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
+          </button>
+        </div>
+        <p v-if="alternateNotice" class="text-sm text-amber-700">{{ alternateNotice }}</p>
       </div>
 
       <div
+        v-if="!wheel"
         class="mb-4 p-3 rounded-lg text-sm"
         :class="result.diff <= 3 ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'"
       >
@@ -116,7 +127,7 @@
         <span v-else>Với 8 người này, cách chia đều nhất vẫn lệch {{ result.diff }} điểm. Không có cách nào gần hơn.</span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div v-if="!wheel" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-for="team in [result.teamA, result.teamB]"
           :key="team.name"
@@ -155,7 +166,8 @@
       v-if="wheel"
       :players="wheel.players"
       :teams="wheel.teams"
-      @close="wheel = null"
+      @complete="commitPendingSplit"
+      @close="closeWheel"
     />
   </div>
 </template>
@@ -176,6 +188,10 @@ const selectedKeys = ref([])
 const bestSplits = ref([])
 const result = ref(null)
 const wheel = ref(null)
+const pendingSplit = ref(null)
+const planMeta = ref({ examined: 0, optionCount: 0 })
+const undoStack = ref([])
+const alternateNotice = ref('')
 const isSplitting = ref(false)
 const appliedPreset = ref(false)
 
@@ -222,18 +238,21 @@ const toggleSelect = (player) => {
   if (index >= 0) {
     selectedKeys.value.splice(index, 1)
     result.value = null
+    undoStack.value = []
     bestSplits.value = []
     return
   }
   if (selectedKeys.value.length >= 8) return
   selectedKeys.value.push(player._key)
   result.value = null
+  undoStack.value = []
   bestSplits.value = []
 }
 
 const clearSelection = () => {
   selectedKeys.value = []
   result.value = null
+  undoStack.value = []
   bestSplits.value = []
 }
 
@@ -242,6 +261,7 @@ const onRankInput = (player, event) => {
   const rank = raw === '' ? null : Number(raw)
   emit('rank-change', { name: player.name, rank: Number.isFinite(rank) ? rank : null })
   result.value = null
+  undoStack.value = []
   bestSplits.value = []
 }
 
@@ -360,12 +380,16 @@ const applySplit = (pick, examined, optionCount) => {
 
 const generateTwoTeams = () => {
   if (!canSplit.value) return
+  alternateNotice.value = ''
   isSplitting.value = true
   const { best, examined } = splitTwoBalancedTeams(selectedPlayers.value)
   bestSplits.value = best
+  planMeta.value = { examined, optionCount: best.length }
   if (best.length > 0) {
     const pick = best[Math.floor(Math.random() * best.length)]
-    applySplit(pick, examined, best.length)
+    pendingSplit.value = pick
+    const [teamA, teamB] = teamsFromPick(pick)
+    openWheel(teamA, teamB)
   }
   isSplitting.value = false
 }
@@ -387,15 +411,55 @@ const splitSignature = (teamA, teamB) => {
   return left < right ? `${left}#${right}` : `${right}#${left}`
 }
 
+const teamsFromPick = (pick) => pick.sumA >= pick.sumB
+  ? [
+      { players: pick.teamA, totalPoints: pick.sumA },
+      { players: pick.teamB, totalPoints: pick.sumB }
+    ]
+  : [
+      { players: pick.teamB, totalPoints: pick.sumB },
+      { players: pick.teamA, totalPoints: pick.sumA }
+    ]
+
+const commitPendingSplit = () => {
+  if (pendingSplit.value) {
+    undoStack.value = [...undoStack.value, result.value]
+    applySplit(pendingSplit.value, planMeta.value.examined, planMeta.value.optionCount)
+    pendingSplit.value = null
+  }
+  wheel.value = null
+}
+
+const closeWheel = () => {
+  wheel.value = null
+  pendingSplit.value = null
+}
+
+const undoSplit = () => {
+  if (undoStack.value.length === 0) return
+  result.value = undoStack.value[undoStack.value.length - 1]
+  undoStack.value = undoStack.value.slice(0, -1)
+  wheel.value = null
+  pendingSplit.value = null
+}
+
 const randomizeAmongBest = () => {
+  alternateNotice.value = ''
   if (!result.value) return
   if (bestSplits.value.length > 1) {
     const current = splitSignature(result.value.teamA.players, result.value.teamB.players)
     const others = bestSplits.value.filter(pick => splitSignature(pick.teamA, pick.teamB) !== current)
-    const pool = others.length > 0 ? others : bestSplits.value
-    const pick = pool[Math.floor(Math.random() * pool.length)]
-    applySplit(pick, result.value.examined || bestSplits.value.length, bestSplits.value.length)
+    if (others.length === 0) {
+      alternateNotice.value = 'Không có phương án khác cùng mức.'
+      return
+    }
+    const pick = others[Math.floor(Math.random() * others.length)]
+    pendingSplit.value = pick
+    const [teamA, teamB] = teamsFromPick(pick)
+    openWheel(teamA, teamB)
+    return
   }
+  pendingSplit.value = null
   openWheel(result.value.teamA, result.value.teamB)
 }
 </script>

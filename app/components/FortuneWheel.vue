@@ -5,7 +5,7 @@
         <div class="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 class="text-2xl font-bold text-gray-800">Chiếc nón kỳ diệu</h3>
-            <p class="text-sm text-gray-600">Chọn đội, rồi bấm quay. Nón sẽ dừng lần lượt vào từng người của đội đó.</p>
+            <p class="text-sm text-gray-600">Chọn đội rồi bấm quay. Quay hết người thì danh sách đội mới hiện. Quay lại nếu chưa muốn chốt cách chia này.</p>
           </div>
           <button @click="close" class="text-gray-500 hover:text-gray-800 text-xl px-2" :disabled="spinning">✕</button>
         </div>
@@ -18,22 +18,23 @@
               class="absolute inset-0"
               :style="{ transform: `rotate(${rotation}deg)`, transition: spinningTurn ? 'transform 2.6s cubic-bezier(0.12, 0.75, 0.15, 1)' : 'none' }"
             >
-              <div class="absolute inset-0 rounded-full border-8 border-amber-400 shadow-lg overflow-hidden">
+              <div class="absolute inset-0 rounded-full border-8 border-amber-400 shadow-lg overflow-hidden" :key="wheelPlayers.length">
                 <div class="absolute inset-0" :style="{ background: wheelBackground }"></div>
+                <div
+                  v-for="(player, index) in wheelPlayers"
+                  :key="'line-' + (player._key || player.name)"
+                  class="absolute bottom-1/2 w-[3px] origin-bottom bg-white"
+                  :style="{ left: 'calc(50% - 1.5px)', height: '50%', transform: `rotate(${boundaryAngle(index)}deg)` }"
+                ></div>
               </div>
               <div
-                v-for="(player, index) in players"
+                v-for="(player, index) in wheelPlayers"
                 :key="player._key || player.name"
-                class="absolute left-1/2 top-1/2 h-0 origin-left"
-                :style="{ width: '46%', transform: `rotate(${labelAngle(index)}deg)` }"
+                class="absolute left-1/2 top-1/2"
+                :style="{ transform: `rotate(${labelAngle(index)}deg) translateX(${bandCenter}px)` }"
               >
-                <span class="absolute left-[24%] top-0 -translate-y-1/2 whitespace-nowrap">
-                  <span
-                    class="block font-bold text-white"
-                    :style="{ fontSize: labelSize, textShadow: '0 1px 2px rgba(0,0,0,0.85)', transform: textFlip(index) }"
-                  >
-                    {{ player.name }}
-                  </span>
+                <span class="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-bold leading-none text-white" :style="{ fontSize: labelSize, textShadow: '0 1px 2px rgba(0,0,0,0.9)' }">
+                  <span class="block" :style="{ transform: textFlip(index) }">{{ player.name }}</span>
                 </span>
               </div>
             </div>
@@ -58,13 +59,22 @@
 
         <div class="flex items-center justify-between gap-3 mb-4">
           <p class="text-sm text-gray-600">{{ statusText }}</p>
-          <button
-            @click="spinSelectedTeam"
-            :disabled="!selectedTeam || spinning || remainingPlayers.length === 0"
-            class="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-bold px-5 py-2 rounded-lg"
-          >
-            {{ spinning ? 'Đang quay...' : 'Quay' }}
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="close"
+              :disabled="spinning"
+              class="bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-800 font-bold px-5 py-2 rounded-lg"
+            >
+              Quay lại
+            </button>
+            <button
+              @click="spinSelectedTeam"
+              :disabled="!selectedTeam || spinning || remainingPlayers.length === 0"
+              class="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-bold px-5 py-2 rounded-lg"
+            >
+              {{ spinning ? 'Đang quay...' : 'Quay' }}
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -96,33 +106,44 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
   players: { type: Array, required: true },
   teams: { type: Array, required: true }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'complete'])
 
-const colors = ['#dc2626', '#d97706', '#15803d', '#1d4ed8', '#7e22ce', '#be185d', '#0f766e', '#b45309']
 const selectedTeamId = ref(props.teams[0]?.id || '')
 const revealedKeys = ref([])
+const wheelPlayers = ref([...props.players])
 const rotation = ref(0)
 const spinning = ref(false)
 const spinningTurn = ref(false)
 const landedName = ref('')
+const completed = ref(false)
 
-const wheelSize = computed(() => (props.players.length > 12 ? 460 : 400))
-const slice = computed(() => 360 / Math.max(props.players.length, 1))
-const labelSize = computed(() => (props.players.length > 12 ? '10px' : '12px'))
+const wheelSize = computed(() => (wheelPlayers.value.length > 12 ? 460 : 400))
+const slice = computed(() => 360 / Math.max(wheelPlayers.value.length, 1))
+const labelSize = computed(() => (wheelPlayers.value.length > 12 ? '11px' : '13px'))
+const bandCenter = computed(() => Math.round(wheelSize.value * 0.3))
+
+function sliceColor(index) {
+  const total = Math.max(wheelPlayers.value.length, 1)
+  const hue = (index * 360) / total
+  return `hsl(${hue} 70% 42%)`
+}
 
 const wheelBackground = computed(() => {
-  const stops = props.players.map((_, index) => {
-    const color = colors[index % colors.length]
-    return `${color} ${index * slice.value}deg ${(index + 1) * slice.value}deg`
+  if (wheelPlayers.value.length === 0) return '#d1d5db'
+  const stops = wheelPlayers.value.map((_, index) => {
+    const color = sliceColor(index)
+    const start = index * slice.value
+    const end = (index + 1) * slice.value
+    return `${color} ${start}deg ${end}deg`
   })
-  return `conic-gradient(from -90deg, ${stops.join(', ')})`
+  return `conic-gradient(from 0deg, ${stops.join(', ')})`
 })
 
 const selectedTeam = computed(() => props.teams.find(team => team.id === selectedTeamId.value) || null)
@@ -140,6 +161,21 @@ const statusText = computed(() => {
 
 function playerKey(player) {
   return player._key || player.name
+}
+
+watch(() => props.players.map(playerKey).join('|'), () => {
+  wheelPlayers.value = [...props.players]
+  revealedKeys.value = []
+  rotation.value = 0
+  spinning.value = false
+  spinningTurn.value = false
+  landedName.value = ''
+  completed.value = false
+  selectedTeamId.value = props.teams[0]?.id || ''
+})
+
+function boundaryAngle(index) {
+  return index * slice.value
 }
 
 function labelAngle(index) {
@@ -170,7 +206,8 @@ function wait(ms) {
 }
 
 function targetRotation(player) {
-  const index = props.players.findIndex(item => playerKey(item) === playerKey(player))
+  const index = wheelPlayers.value.findIndex(item => playerKey(item) === playerKey(player))
+  if (index < 0) return rotation.value
   const center = (index + 0.5) * slice.value
   const turns = 5
   const current = rotation.value
@@ -192,14 +229,26 @@ async function spinSelectedTeam() {
   await nextTick()
   await wait(40)
   for (const player of queue) {
+    if (!wheelPlayers.value.some(item => playerKey(item) === playerKey(player))) continue
+    spinningTurn.value = true
+    await nextTick()
+    await wait(40)
     rotation.value = targetRotation(player)
     await wait(2700)
     landedName.value = player.name
     revealedKeys.value = [...revealedKeys.value, playerKey(player)]
+    const total = props.teams.reduce((sum, team) => sum + team.players.length, 0)
+    if (!completed.value && revealedKeys.value.length >= total) completed.value = true
     await wait(450)
+    spinningTurn.value = false
+    await nextTick()
+    wheelPlayers.value = wheelPlayers.value.filter(item => playerKey(item) !== playerKey(player))
+    rotation.value = 0
+    await nextTick()
   }
   spinning.value = false
   spinningTurn.value = false
+  if (completed.value) emit('complete')
 }
 
 function close() {

@@ -97,15 +97,25 @@
             <span v-if="result.optionCount > 1"> · {{ result.optionCount }} phương án cùng mức</span>
           </p>
         </div>
-        <button
-          @click="randomizeAmongBest"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-        >
-          {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-if="undoStack.length"
+            @click="undoSplit"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+          >
+            Quay lại
+          </button>
+          <button
+            @click="randomizeAmongBest"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+          >
+            {{ result.optionCount > 1 ? 'Đổi phương án khác' : 'Quay chiếc nón' }}
+          </button>
+        </div>
+        <p v-if="alternateNotice" class="text-sm text-amber-700">{{ alternateNotice }}</p>
       </div>
 
-      <div class="space-y-4">
+      <div v-if="!wheel" class="space-y-4">
         <div
           v-for="(match, index) in result.matches"
           :key="index"
@@ -150,7 +160,8 @@
       v-if="wheel"
       :players="wheel.players"
       :teams="wheel.teams"
-      @close="wheel = null"
+      @complete="commitPendingOption"
+      @close="closeWheel"
     />
   </div>
 </template>
@@ -171,6 +182,10 @@ const selectedKeys = ref([])
 const options = ref([])
 const result = ref(null)
 const wheel = ref(null)
+const pendingOption = ref(null)
+const planInfo = ref({ exact: false })
+const undoStack = ref([])
+const alternateNotice = ref('')
 const isSplitting = ref(false)
 
 const keyedPlayers = computed(() =>
@@ -217,18 +232,21 @@ const toggleSelect = (player) => {
   if (index >= 0) selectedKeys.value.splice(index, 1)
   else selectedKeys.value.push(player._key)
   result.value = null
+  undoStack.value = []
   options.value = []
 }
 
 const clearSelection = () => {
   selectedKeys.value = []
   result.value = null
+  undoStack.value = []
   options.value = []
 }
 
 const selectAllRanked = () => {
   selectedKeys.value = keyedPlayers.value.filter(player => player.rank >= 1).map(player => player._key)
   result.value = null
+  undoStack.value = []
   options.value = []
 }
 
@@ -237,6 +255,7 @@ const onRankInput = (player, event) => {
   const rank = raw === '' ? null : Number(raw)
   emit('rank-change', { name: player.name, rank: Number.isFinite(rank) ? rank : null })
   result.value = null
+  undoStack.value = []
   options.value = []
 }
 
@@ -260,12 +279,15 @@ const applyOption = (option, plan) => {
 
 const generate = () => {
   if (!canSplit.value) return
+  alternateNotice.value = ''
   isSplitting.value = true
   const plan = planTwoVsTwo(selectedPlayers.value)
   options.value = plan.options
+  planInfo.value = { exact: plan.exact }
   if (plan.options.length > 0) {
     const pick = plan.options[Math.floor(Math.random() * plan.options.length)]
-    applyOption(pick, plan)
+    pendingOption.value = pick
+    openWheel(pick.matches)
   }
   isSplitting.value = false
 }
@@ -288,15 +310,44 @@ const optionSignature = (matches) => matches.map(match => {
   return left < right ? `${left}#${right}` : `${right}#${left}`
 }).sort().join('||')
 
+const commitPendingOption = () => {
+  if (pendingOption.value) {
+    undoStack.value = [...undoStack.value, result.value]
+    applyOption(pendingOption.value, { exact: planInfo.value.exact, options: options.value })
+    pendingOption.value = null
+  }
+  wheel.value = null
+}
+
+const closeWheel = () => {
+  wheel.value = null
+  pendingOption.value = null
+}
+
+const undoSplit = () => {
+  if (undoStack.value.length === 0) return
+  result.value = undoStack.value[undoStack.value.length - 1]
+  undoStack.value = undoStack.value.slice(0, -1)
+  wheel.value = null
+  pendingOption.value = null
+}
+
 const randomizeAmongBest = () => {
+  alternateNotice.value = ''
   if (!result.value) return
   if (options.value.length > 1) {
     const current = optionSignature(result.value.matches)
     const others = options.value.filter(option => optionSignature(option.matches) !== current)
-    const pool = others.length > 0 ? others : options.value
-    const pick = pool[Math.floor(Math.random() * pool.length)]
-    applyOption(pick, { exact: result.value.exact, options: options.value })
+    if (others.length === 0) {
+      alternateNotice.value = 'Không có phương án khác cùng mức.'
+      return
+    }
+    const pick = others[Math.floor(Math.random() * others.length)]
+    pendingOption.value = pick
+    openWheel(pick.matches)
+    return
   }
+  pendingOption.value = null
   openWheel(result.value.matches)
 }
 </script>
