@@ -1,18 +1,5 @@
 <template>
-  <div class="min-h-screen relative">
-    <div class="fixed inset-0 -z-10 bg-[#2a1408]"></div>
-    <video
-      ref="bgVideo"
-      class="realm-video fixed inset-0 -z-10 h-full w-full object-cover"
-      autoplay
-      muted
-      loop
-      playsinline
-      poster="/aoe-armies-sunset.jpg"
-    >
-      <source src="/realm-armies.mp4" type="video/mp4" />
-    </video>
-    <div class="fixed inset-0 -z-10 bg-black/20"></div>
+  <div class="min-h-screen" style="background-color: #f6f1e7">
     <div class="container mx-auto px-4 py-8">
              <header class="text-center mb-8">
                <div v-if="loginEnabled" class="flex justify-between items-center mb-4">
@@ -811,19 +798,10 @@ const isAdmin = ref(!loginEnabled)
 const showLoginModal = ref(false)
 const loginPassword = ref('')
 const loginError = ref('')
-const bgVideo = ref(null)
 
 // Load data from localStorage on mount
 onMounted(() => {
   if (process.client) {
-    const video = bgVideo.value
-    if (video) {
-      video.muted = true
-      const start = () => video.play().catch(() => {})
-      start()
-      video.addEventListener('loadeddata', start)
-    }
-
     if (loginEnabled) {
       const adminStatus = localStorage.getItem('aoe_admin')
       isAdmin.value = adminStatus === 'true'
