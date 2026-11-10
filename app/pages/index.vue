@@ -1,5 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-screen relative">
+    <div class="fixed inset-0 -z-10 bg-[#2a1408]"></div>
+    <video
+      ref="bgVideo"
+      class="realm-video fixed inset-0 -z-10 h-full w-full object-cover"
+      autoplay
+      muted
+      loop
+      playsinline
+      poster="/aoe-armies-sunset.jpg"
+    >
+      <source src="/realm-armies.mp4" type="video/mp4" />
+    </video>
+    <div class="fixed inset-0 -z-10 bg-black/20"></div>
     <div class="container mx-auto px-4 py-8">
              <header class="text-center mb-8">
                <div v-if="loginEnabled" class="flex justify-between items-center mb-4">
@@ -23,15 +36,10 @@
                    </button>
                  </div>
                </div>
-               <h1 class="text-4xl font-bold text-gray-800 mb-2">
-                 🎮 AOE Team Balancer
-               </h1>
-               <p class="text-lg text-gray-600 mb-6">
-                 Công cụ chia team cân bằng ngẫu nhiên cho Age of Empires
-               </p>
+               <RealmBanner class="mb-8" />
                
                <!-- Hệ thống chấm điểm -->
-               <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl mb-8 max-w-5xl mx-auto">
+               <div class="frame-3d bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl mb-8 max-w-5xl mx-auto">
                  <!-- Header có thể click để toggle -->
                  <div 
                    @click="toggleScoringSystem"
@@ -434,14 +442,14 @@
       <main>
         <!-- Tab Navigation -->
         <div class="mb-8">
-          <div class="flex flex-wrap justify-center gap-1 bg-gray-100 p-1 rounded-lg max-w-5xl mx-auto">
+          <div class="frame-3d flex flex-wrap justify-center gap-1 bg-stone-950/80 p-1 rounded-xl max-w-5xl mx-auto">
             <button
               @click="switchToTab('teams')"
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'teams' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow' 
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               🎰 Chia Team Cân Bằng Ngẫu Nhiên
@@ -451,8 +459,8 @@
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'eight'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow'
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               🎯 Chọn 8 người chia 4v4
@@ -462,8 +470,8 @@
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'twos'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow'
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               ⚔️ Chọn danh sách chia 2v2
@@ -473,8 +481,8 @@
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'threes'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow'
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               🛡️ Chọn danh sách chia 3v3
@@ -484,8 +492,8 @@
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'compare'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow'
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               ⚖️ So sánh 2 đội
@@ -495,8 +503,8 @@
               :class="[
                 'px-4 py-3 rounded-md font-medium transition-colors',
                 activeTab === 'players' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-amber-800 text-amber-50 shadow' 
+                  : 'text-amber-100/80 hover:text-amber-50'
               ]"
             >
               👥 Nhập Danh Sách Người Chơi
@@ -759,12 +767,15 @@ useHead({
     
     // Additional meta
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { name: 'theme-color', content: '#3B82F6' },
+    { name: 'theme-color', content: '#1c140c' },
     
     // Zalo specific
     { property: 'og:image:type', content: 'image/png' },
     { property: 'og:image:alt', content: 'AOE Team Balancer - Chia Team Cân Bằng' },
     { name: 'robots', content: 'index, follow' }
+  ],
+  link: [
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&display=swap' }
   ],
   script: [
     {
@@ -800,10 +811,19 @@ const isAdmin = ref(!loginEnabled)
 const showLoginModal = ref(false)
 const loginPassword = ref('')
 const loginError = ref('')
+const bgVideo = ref(null)
 
 // Load data from localStorage on mount
 onMounted(() => {
   if (process.client) {
+    const video = bgVideo.value
+    if (video) {
+      video.muted = true
+      const start = () => video.play().catch(() => {})
+      start()
+      video.addEventListener('loadeddata', start)
+    }
+
     if (loginEnabled) {
       const adminStatus = localStorage.getItem('aoe_admin')
       isAdmin.value = adminStatus === 'true'

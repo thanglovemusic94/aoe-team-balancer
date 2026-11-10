@@ -160,6 +160,7 @@
       v-if="wheel"
       :players="wheel.players"
       :teams="wheel.teams"
+      :bands="rosterScale.bands"
       @complete="commitPendingOption"
       @close="closeWheel"
     />
