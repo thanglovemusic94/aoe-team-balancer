@@ -659,7 +659,7 @@
               ✅ Đã có {{ players.length }} người chơi
             </div>
             <p class="text-green-700 mb-4">
-              Danh sách dùng chung cho mọi kiểu chia. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 6, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
+              Danh sách dùng chung cho mọi kiểu chia. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 3 và từ 6 người trở lên, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
             </p>
             <div class="flex flex-wrap justify-center gap-2">
               <button

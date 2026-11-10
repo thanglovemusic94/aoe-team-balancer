@@ -4,7 +4,7 @@
       Chọn danh sách, chia trận 3v3
     </h2>
     <p class="text-gray-600 mb-4">
-      Mỗi đội 3 người. Cứ 6 người tạo một trận 3v3. Chọn 6, 12, 18, 24... người đã có điểm. Các đội được ghép sao cho tổng điểm trong từng trận lệch ít nhất.
+      Mỗi đội 3 người. Chọn số người chia hết cho 3, từ 6 người trở lên. Số đội lẻ vẫn được chia cân bằng, đội còn lại chờ trận sau.
     </p>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -88,7 +88,7 @@
     <div v-if="result" class="mt-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">{{ result.matches.length }} trận 3v3</h3>
+          <h3 class="text-xl font-bold text-gray-800">{{ result.matches.length }} trận 3v3<span v-if="result.bye"> · 1 đội chờ</span></h3>
           <p class="text-sm text-gray-600">
             {{ result.exact ? 'Đã xét hết cách ghép đội' : 'Đã dò các cách ghép đội' }}.
             Chênh lệch lớn nhất trong một trận:
@@ -154,6 +154,27 @@
             </div>
           </div>
         </div>
+        <div v-if="result.bye" class="border border-gray-200 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="font-bold text-gray-800">Đội chờ</h4>
+            <span class="text-sm font-semibold text-gray-600">{{ result.bye.totalPoints }} điểm</span>
+          </div>
+          <ul class="space-y-1">
+            <li
+              v-for="player in result.bye.players"
+              :key="player._key"
+              class="flex items-center justify-between bg-gray-50 rounded px-2 py-1"
+            >
+              <span class="flex items-center gap-2">
+                <span class="font-medium text-gray-800">{{ player.name }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" :class="badgeClass(player.rank)">
+                  {{ categoryLabel(player.rank) }}
+                </span>
+              </span>
+              <span class="font-semibold text-gray-700">{{ player.rank }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
     <FortuneWheel
@@ -211,19 +232,23 @@ const visiblePlayers = computed(() => {
 
 const canSplit = computed(() => {
   const count = selectedPlayers.value.length
-  return count >= 6 && count % 6 === 0 && selectedPlayers.value.every(player => player.rank >= 1 && player.rank <= 23)
+  return count >= 6 && count % 3 === 0 && selectedPlayers.value.every(player => player.rank >= 1 && player.rank <= 23)
 })
 
 const selectionHint = computed(() => {
   const count = selectedPlayers.value.length
   if (count === 0) return 'Chọn người sẽ vào giải 3v3'
   if (selectedPlayers.value.some(player => !player.rank)) return 'Điền điểm cho người còn trống'
-  if (count < 6) return 'Cần ít nhất 6 người cho một trận 3v3'
-  if (count % 6 !== 0) {
-    const extra = count % 6
-    return `Cần bội số của 6. Bớt ${extra} người hoặc thêm ${6 - extra} người`
+  if (count < 6) return 'Cần ít nhất 6 người'
+  if (count % 3 !== 0) {
+    const extra = count % 3
+    return `Cần số người chia hết cho 3. Bớt ${extra} người hoặc thêm ${3 - extra} người`
   }
-  return `${count / 6} trận · ${count / 3} đội`
+  const teamCount = count / 3
+  const matchCount = Math.floor(teamCount / 2)
+  return teamCount % 2 === 1
+    ? `${matchCount} trận · ${teamCount} đội, 1 đội chờ`
+    : `${matchCount} trận · ${teamCount} đội`
 })
 
 const isSelected = (player) => selectedKeys.value.includes(player._key)
@@ -271,6 +296,7 @@ const diffClass = (diff) => {
 const applyOption = (option, plan) => {
   result.value = {
     matches: option.matches,
+    bye: option.bye || null,
     matchDiff: option.matchDiff,
     pairDiff: option.pairDiff,
     exact: plan.exact,
@@ -288,28 +314,33 @@ const generate = () => {
   if (plan.options.length > 0) {
     const pick = plan.options[Math.floor(Math.random() * plan.options.length)]
     pendingOption.value = pick
-    openWheel(pick.matches)
+    openWheel(pick)
   }
   isSplitting.value = false
 }
 
-const openWheel = (matches) => {
-  const teams = matches.flatMap((match, index) => [
+const openWheel = (option) => {
+  const teams = option.matches.flatMap((match, index) => [
     { id: `${index}-A`, name: `Trận ${index + 1} · Đội A`, players: match.teamA.players },
     { id: `${index}-B`, name: `Trận ${index + 1} · Đội B`, players: match.teamB.players }
   ])
+  if (option.bye) teams.push({ id: 'bye', name: 'Đội chờ', players: option.bye.players })
   wheel.value = {
     players: teams.flatMap(team => team.players),
     teams
   }
 }
 
-const optionSignature = (matches) => matches.map(match => {
-  const names = side => side.players.map(player => player._key).sort().join('|')
-  const left = names(match.teamA)
-  const right = names(match.teamB)
-  return left < right ? `${left}#${right}` : `${right}#${left}`
-}).sort().join('||')
+const optionSignature = (option) => {
+  const matches = option.matches.map(match => {
+    const names = side => side.players.map(player => player._key).sort().join('|')
+    const left = names(match.teamA)
+    const right = names(match.teamB)
+    return left < right ? `${left}#${right}` : `${right}#${left}`
+  }).sort().join('||')
+  const bye = option.bye ? option.bye.players.map(player => player._key).sort().join('|') : ''
+  return `${matches}::${bye}`
+}
 
 const commitPendingOption = () => {
   if (pendingOption.value) {
@@ -337,18 +368,18 @@ const randomizeAmongBest = () => {
   alternateNotice.value = ''
   if (!result.value) return
   if (options.value.length > 1) {
-    const current = optionSignature(result.value.matches)
-    const others = options.value.filter(option => optionSignature(option.matches) !== current)
+    const current = optionSignature(result.value)
+    const others = options.value.filter(option => optionSignature(option) !== current)
     if (others.length === 0) {
       alternateNotice.value = 'Không có phương án khác cùng mức.'
       return
     }
     const pick = others[Math.floor(Math.random() * others.length)]
     pendingOption.value = pick
-    openWheel(pick.matches)
+    openWheel(pick)
     return
   }
   pendingOption.value = null
-  openWheel(result.value.matches)
+  openWheel(result.value)
 }
 </script>

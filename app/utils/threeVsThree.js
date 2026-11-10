@@ -27,23 +27,58 @@ function scoreTeams(teams) {
   return { diff: max - min, variance }
 }
 
-function matchesFromTeams(teams) {
-  const ordered = [...teams].sort((a, b) => sumRank(b) - sumRank(a))
-  const matches = []
-  for (let index = 0; index < ordered.length; index += 2) {
-    const left = [...ordered[index]].sort((a, b) => b.rank - a.rank)
-    const right = [...ordered[index + 1]].sort((a, b) => b.rank - a.rank)
-    const sumA = sumRank(left)
-    const sumB = sumRank(right)
-    const teamA = sumA >= sumB ? left : right
-    const teamB = sumA >= sumB ? right : left
-    matches.push({
-      teamA: { players: teamA, totalPoints: sumRank(teamA) },
-      teamB: { players: teamB, totalPoints: sumRank(teamB) },
-      diff: Math.abs(sumA - sumB)
-    })
+function arrangeTeams(teams) {
+  const list = teams.map(team => ({
+    players: [...team].sort((a, b) => b.rank - a.rank),
+    total: sumRank(team)
+  }))
+  const byeIndexes = list.length % 2 === 1 ? list.map((_, index) => index) : [-1]
+  let best = null
+  for (const byeIndex of byeIndexes) {
+    const pool = list.filter((_, index) => index !== byeIndex)
+    const matchings = perfectMatchings(pool)
+    matchings.sort((a, b) => a.maxDiff - b.maxDiff || a.sumDiff - b.sumDiff)
+    const chosen = matchings[0]
+    const candidate = {
+      maxDiff: chosen.maxDiff,
+      sumDiff: chosen.sumDiff,
+      bye: byeIndex >= 0 ? list[byeIndex] : null,
+      pairs: chosen.pairs
+    }
+    const better = !best || candidate.maxDiff < best.maxDiff || (candidate.maxDiff === best.maxDiff && candidate.sumDiff < best.sumDiff)
+    if (better) best = candidate
   }
-  return matches.sort((a, b) => (b.teamA.totalPoints + b.teamB.totalPoints) - (a.teamA.totalPoints + a.teamB.totalPoints))
+  const matches = best.pairs.map(([left, right]) => {
+    const teamA = left.total >= right.total ? left : right
+    const teamB = left.total >= right.total ? right : left
+    return {
+      teamA: { players: teamA.players, totalPoints: teamA.total },
+      teamB: { players: teamB.players, totalPoints: teamB.total },
+      diff: Math.abs(left.total - right.total)
+    }
+  }).sort((a, b) => (b.teamA.totalPoints + b.teamB.totalPoints) - (a.teamA.totalPoints + a.teamB.totalPoints))
+  const bye = best.bye ? { players: best.bye.players, totalPoints: best.bye.total } : null
+  return { matches, bye }
+}
+
+function perfectMatchings(items) {
+  if (items.length === 0) return [{ pairs: [], maxDiff: 0, sumDiff: 0 }]
+  const first = items[0]
+  const rest = items.slice(1)
+  const found = []
+  for (let index = 0; index < rest.length; index++) {
+    const partner = rest[index]
+    const diff = Math.abs(first.total - partner.total)
+    const remaining = rest.filter((_, itemIndex) => itemIndex !== index)
+    for (const sub of perfectMatchings(remaining)) {
+      found.push({
+        pairs: [[first, partner], ...sub.pairs],
+        maxDiff: Math.max(diff, sub.maxDiff),
+        sumDiff: diff + sub.sumDiff
+      })
+    }
+  }
+  return found
 }
 
 function snakeTeams(players) {
@@ -178,9 +213,8 @@ export function planThreeVsThree(players) {
   else searchBest(players, state)
 
   const options = state.best.map(teams => {
-    const matches = matchesFromTeams(teams)
-    const matchDiff = Math.max(...matches.map(match => match.diff))
-    return { matches, pairDiff: state.bestDiff, matchDiff }
+    const arranged = arrangeTeams(teams)
+    return { matches: arranged.matches, bye: arranged.bye, pairDiff: state.bestDiff, matchDiff: Math.max(...arranged.matches.map(match => match.diff)) }
   })
   options.sort((a, b) => a.matchDiff - b.matchDiff || a.pairDiff - b.pairDiff)
   const bestMatchDiff = options[0]?.matchDiff ?? 0
