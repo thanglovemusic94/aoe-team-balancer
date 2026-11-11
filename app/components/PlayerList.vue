@@ -41,11 +41,13 @@
           <span class="text-lg font-bold ml-2" :class="getRankTextClass(player.rank)">
             <input
               v-if="editingPlayer === player"
-              v-model.number="editingPlayer.rank"
+              :value="editingPlayer.rank ?? ''"
               type="number"
               min="1"
               max="23"
+              step="0.5"
               class="w-16 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none"
+              @input="editingPlayer.rank = $event.target.value"
               @blur="finishEdit"
               @keyup.enter="finishEdit"
             />
@@ -74,7 +76,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { gradeScale, gradeForScore } from '../utils/playerGrade.js'
+import { gradeScale, gradeForScore, normalizeScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: {
@@ -122,10 +124,12 @@ const editPlayer = (player) => {
 const finishEdit = () => {
   if (editingPlayer.value) {
     // Validate the edited data
-    if (editingPlayer.value.rank < 1 || editingPlayer.value.rank > 23) {
-      alert('Điểm số phải trong khoảng 1-23')
+    const rank = normalizeScore(editingPlayer.value.rank)
+    if (rank == null || rank < 1 || rank > 23) {
+      alert('Điểm số phải trong khoảng 1-23, có thể là số lẻ như 8.5')
       return
     }
+    editingPlayer.value.rank = rank
     if (!editingPlayer.value.name.trim()) {
       alert('Tên không được để trống')
       return

@@ -58,7 +58,7 @@
     </div>
 
     <p v-if="selectedPlayers.length === 8 && !canSplit" class="mb-3 text-sm text-amber-700">
-      8 người đã được chọn. Điền điểm (1–23) cho người còn trống rồi mới chia team.
+      8 người đã được chọn. Điền điểm từ 1 đến 23, kể cả số lẻ như 8.5, rồi mới chia team.
     </p>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[28rem] overflow-y-auto pr-1">
@@ -75,14 +75,16 @@
             {{ player.rank ? categoryLabel(player.rank) : 'Chưa có điểm' }}
           </span>
           <input
-            :value="player.rank ?? ''"
+            :value="rankField(player)"
             type="number"
             min="1"
             max="23"
-            placeholder="Điểm"
+            step="0.5"
+            placeholder="8.5"
             class="w-16 px-2 py-1 rounded border text-right text-sm text-gray-800"
             @click.stop
-            @input="onRankInput(player, $event)"
+            @input="onRankDraft(player, $event)"
+            @change="commitRank(player, $event)"
           />
         </div>
       </div>
@@ -92,7 +94,7 @@
     <div v-if="result" class="mt-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">Kết quả 4v4</h3>
+          <h3 class="text-xl font-bold text-gray-800">2 team</h3>
           <p class="text-sm text-gray-600">
             Đã xét {{ result.examined }} cách chia. Chênh lệch nhỏ nhất:
             <span class="font-semibold" :class="diffClass(result.diff)">{{ result.diff }} điểm</span>
@@ -161,6 +163,7 @@
           </div>
         </div>
       </div>
+      <GroupDraw v-if="drawnTeams.length >= 2" :teams="drawnTeams" />
     </div>
     <FortuneWheel
       v-if="wheel"
@@ -187,6 +190,11 @@ const emit = defineEmits(['rank-change'])
 const query = ref('')
 const selectedKeys = ref([])
 const bestSplits = ref([])
+const drawnTeams = computed(() => {
+  if (!result.value || wheel.value) return []
+  return [result.value.teamA, result.value.teamB]
+})
+
 const result = ref(null)
 const wheel = ref(null)
 const pendingSplit = ref(null)
@@ -238,32 +246,35 @@ const toggleSelect = (player) => {
   const index = selectedKeys.value.indexOf(player._key)
   if (index >= 0) {
     selectedKeys.value.splice(index, 1)
-    result.value = null
-    undoStack.value = []
-    bestSplits.value = []
     return
   }
   if (selectedKeys.value.length >= 8) return
   selectedKeys.value.push(player._key)
-  result.value = null
-  undoStack.value = []
-  bestSplits.value = []
 }
 
 const clearSelection = () => {
   selectedKeys.value = []
-  result.value = null
-  undoStack.value = []
-  bestSplits.value = []
 }
 
-const onRankInput = (player, event) => {
-  const raw = event.target.value
-  const rank = raw === '' ? null : Number(raw)
+const rankDraft = ref({})
+
+const rankField = (player) => (
+  Object.prototype.hasOwnProperty.call(rankDraft.value, player._key)
+    ? rankDraft.value[player._key]
+    : (player.rank ?? '')
+)
+
+const onRankDraft = (player, event) => {
+  rankDraft.value = { ...rankDraft.value, [player._key]: event.target.value }
+}
+
+const commitRank = (player, event) => {
+  const raw = String(event?.target?.value ?? rankDraft.value[player._key] ?? '').trim()
+  const next = { ...rankDraft.value }
+  delete next[player._key]
+  rankDraft.value = next
+  const rank = raw === '' ? null : Math.round(Number(raw) * 2) / 2
   emit('rank-change', { name: player.name, rank: Number.isFinite(rank) ? rank : null })
-  result.value = null
-  undoStack.value = []
-  bestSplits.value = []
 }
 
 watch(keyedPlayers, () => {
@@ -362,12 +373,12 @@ const splitTwoBalancedTeams = (eightPlayers) => {
 const applySplit = (pick, examined, optionCount) => {
   const [first, second] = pick.sumA >= pick.sumB
     ? [
-        { name: 'Team A', players: pick.teamA, totalPoints: pick.sumA },
-        { name: 'Team B', players: pick.teamB, totalPoints: pick.sumB }
+        { name: 'Team 1', players: pick.teamA, totalPoints: pick.sumA },
+        { name: 'Team 2', players: pick.teamB, totalPoints: pick.sumB }
       ]
     : [
-        { name: 'Team A', players: pick.teamB, totalPoints: pick.sumB },
-        { name: 'Team B', players: pick.teamA, totalPoints: pick.sumA }
+        { name: 'Team 1', players: pick.teamB, totalPoints: pick.sumB },
+        { name: 'Team 2', players: pick.teamA, totalPoints: pick.sumA }
       ]
 
   result.value = {
@@ -399,8 +410,8 @@ const openWheel = (teamA, teamB) => {
   wheel.value = {
     players: [...teamA.players, ...teamB.players],
     teams: [
-      { id: 'A', name: 'Đội A', players: teamA.players },
-      { id: 'B', name: 'Đội B', players: teamB.players }
+      { id: 'A', name: 'Team 1', players: teamA.players },
+      { id: 'B', name: 'Team 2', players: teamB.players }
     ]
   }
 }
@@ -437,9 +448,9 @@ const closeWheel = () => {
 }
 
 const undoSplit = () => {
-  if (undoStack.value.length === 0) return
-  result.value = undoStack.value[undoStack.value.length - 1]
-  undoStack.value = undoStack.value.slice(0, -1)
+  result.value = null
+  undoStack.value = []
+  bestSplits.value = []
   wheel.value = null
   pendingSplit.value = null
 }

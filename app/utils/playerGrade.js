@@ -20,38 +20,57 @@ function emptyBand(style) {
   }
 }
 
+function toHalf(value) {
+  return Math.round(Number(value) * 2)
+}
+
+function formatScore(halves) {
+  return halves % 2 === 0 ? String(halves / 2) : (halves / 2).toFixed(1)
+}
+
+export function normalizeScore(value) {
+  if (value === '' || value == null) return null
+  const score = Number(value)
+  if (!Number.isFinite(score)) return null
+  return toHalf(score) / 2
+}
+
 export function buildGradeBands(min, max) {
   if (!Number.isFinite(min) || !Number.isFinite(max)) {
     return GRADE_STYLES.map(emptyBand)
   }
 
-  if (min === max) {
+  const minH = toHalf(min)
+  const maxH = toHalf(max)
+
+  if (minH === maxH) {
     return GRADE_STYLES.map((style, index) => (
       index === 0
-        ? { ...style, low: min, high: max, rangeLabel: String(min) }
+        ? { ...style, low: minH / 2, high: maxH / 2, rangeLabel: formatScore(minH) }
         : emptyBand(style)
     ))
   }
 
-  const span = max - min
+  const span = maxH - minH
   const bands = []
-  let cursor = max
+  let cursor = maxH
 
   for (let index = 0; index < GRADE_STYLES.length; index++) {
     const style = GRADE_STYLES[index]
-    if (cursor < min) {
+    if (cursor < minH) {
       bands.push(emptyBand(style))
       continue
     }
 
     const isLast = index === GRADE_STYLES.length - 1
-    const rawLow = isLast ? min : Math.floor(max - ((index + 1) * span) / GRADE_STYLES.length) + 1
-    const low = Math.max(min, Math.min(rawLow, cursor))
+    const cut = maxH - ((index + 1) * span) / GRADE_STYLES.length
+    const rawLow = isLast ? minH : Math.floor(cut + 1e-9) + 1
+    const low = Math.max(minH, Math.min(rawLow, cursor))
     bands.push({
       ...style,
-      low,
-      high: cursor,
-      rangeLabel: low === cursor ? String(cursor) : `${low}–${cursor}`
+      low: low / 2,
+      high: cursor / 2,
+      rangeLabel: low === cursor ? formatScore(cursor) : `${formatScore(low)}–${formatScore(cursor)}`
     })
     cursor = low - 1
   }
@@ -76,7 +95,9 @@ export function gradeScale(players) {
 export function gradeForScore(score, bands) {
   const value = Number(score)
   if (!Number.isFinite(value) || value < 1 || !bands) return null
-  return bands.find(band => band.low != null && value >= band.low && value <= band.high) || null
+  const hit = bands.find(band => band.low != null && value >= band.low - 1e-6 && value <= band.high + 1e-6)
+  if (hit) return hit
+  return bands.find(band => band.low != null && value >= band.low - 1e-6) || null
 }
 
 export function gradeBadgeClass(score, bands) {

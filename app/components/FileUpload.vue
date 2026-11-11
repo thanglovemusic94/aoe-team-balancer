@@ -140,7 +140,7 @@ const readExcelFile = (file) => {
         for (let i = startRow; i < jsonData.length; i++) {
           const row = jsonData[i]
           if (row && row.length >= 2 && row[0] != null && row[1] != null) {
-            const rank = parseInt(row[0])
+            const rank = Math.round(Number(row[0]) * 2) / 2
             const name = String(row[1]).trim()
             
             // Bỏ qua dòng trống

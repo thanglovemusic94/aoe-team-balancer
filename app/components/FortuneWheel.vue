@@ -1,19 +1,19 @@
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto p-5">
+    <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3">
+      <div class="bg-white rounded-2xl shadow-2xl w-[98vw] max-w-[1720px] h-[94vh] overflow-y-auto p-6" style="scrollbar-gutter: stable">
         <div class="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h3 class="text-2xl font-bold text-gray-800">Chiếc nón kỳ diệu</h3>
-            <p class="text-sm text-gray-600">Chọn đội rồi bấm quay. Kim dừng thì tên hiện lớn. Đội cuối lật từng người. Quay lại nếu chưa muốn chốt cách chia này.</p>
+            <h3 class="text-4xl font-bold text-gray-800">Chiếc nón kỳ diệu</h3>
+            <p class="text-lg text-gray-600 mt-1">Chọn team rồi bấm quay. Quay xong hãy bấm Xác nhận để chốt. Quay lại nếu chưa muốn cách chia này.</p>
           </div>
-          <button @click="close" class="text-gray-500 hover:text-gray-800 text-xl px-2" :disabled="spinning">✕</button>
+          <button @click="close" class="text-gray-500 hover:text-gray-800 text-3xl px-3" :disabled="spinning">✕</button>
         </div>
 
-        <div class="grid lg:grid-cols-[auto_1fr] gap-5 items-start">
-        <div class="flex justify-center pt-2">
-          <div class="relative" :style="{ width: wheelSize + 'px', height: wheelSize + 'px' }">
-            <div class="absolute left-1/2 -translate-x-1/2 -top-1 z-20 h-0 w-0 border-l-[14px] border-r-[14px] border-t-[26px] border-l-transparent border-r-transparent border-t-gray-900"></div>
+        <div class="wheel-layout">
+        <div class="flex justify-center">
+          <div ref="wheelBox" class="relative" :style="{ width: wheelBoxSize, height: wheelBoxSize }">
+            <div class="absolute left-1/2 -translate-x-1/2 -top-2 z-20 h-0 w-0 border-l-[22px] border-r-[22px] border-t-[40px] border-l-transparent border-r-transparent border-t-gray-900"></div>
             <div
               class="absolute inset-0"
               :style="{ transform: `rotate(${rotation}deg)`, transition: 'none' }"
@@ -41,7 +41,7 @@
                 </span>
               </div>
             </div>
-            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-amber-300 border-4 border-amber-600"></div>
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full bg-amber-300 border-4 border-amber-600" :style="{ width: hubSize + 'px', height: hubSize + 'px' }"></div>
           </div>
         </div>
 
@@ -52,7 +52,7 @@
             :key="team.id"
             @click="selectTeam(team.id)"
             :disabled="spinning"
-            class="px-3 py-2 rounded-lg border text-sm font-medium"
+            class="px-4 py-3 rounded-lg border text-lg font-medium"
             :class="selectedTeamId === team.id ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300'"
           >
             {{ team.name }}
@@ -61,46 +61,59 @@
         </div>
 
         <div class="flex items-center justify-between gap-3 mb-4">
-          <p class="text-sm text-gray-600">{{ statusText }}</p>
-          <div class="flex gap-2">
+          <p class="text-lg text-gray-700 min-h-[3.5rem] flex-1">{{ statusText }}</p>
+          <div class="flex shrink-0 gap-2">
             <button
               @click="close"
               :disabled="spinning"
-              class="bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-800 font-bold px-5 py-2 rounded-lg"
+              class="bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-800 font-bold text-lg px-6 py-3 rounded-lg"
             >
               Quay lại
             </button>
             <button
+              v-if="completed"
+              @click="confirm"
+              class="bg-green-600 hover:bg-green-700 text-white font-bold text-lg px-6 py-3 rounded-lg"
+            >
+              Xác nhận
+            </button>
+            <button
+              v-else
               @click="spinSelectedTeam"
               :disabled="!selectedTeam || spinning || remainingPlayers.length === 0"
-              class="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-bold px-5 py-2 rounded-lg"
+              class="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-bold text-lg px-6 py-3 rounded-lg"
             >
               {{ spinning ? 'Đang quay...' : 'Quay' }}
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-4">
           <div
             v-for="team in teams"
             :key="'list-' + team.id"
-            class="rounded-lg border p-3"
+            class="rounded-lg border p-4 min-w-0"
             :class="selectedTeamId === team.id ? 'border-blue-400 bg-blue-50' : 'border-gray-200'"
           >
-            <div class="font-semibold text-gray-800 mb-2">{{ team.name }}</div>
-            <ul class="space-y-1">
+            <div class="flex items-center justify-between gap-3 mb-3 min-h-[2rem]">
+              <div class="text-xl font-semibold text-gray-800 whitespace-nowrap">{{ team.name }}</div>
+              <div class="text-lg font-bold text-amber-800 tabular-nums whitespace-nowrap">
+                {{ revealedPlayers(team).length ? `Tổng ${formatPoints(teamTotal(team))} điểm` : 'Tổng —' }}
+              </div>
+            </div>
+            <ul class="space-y-2 min-h-[4.5rem]">
               <li
                 v-for="player in revealedPlayers(team)"
                 :key="player._key || player.name"
-                class="flex justify-between bg-white rounded px-2 py-1 text-sm"
+                class="flex justify-between items-center gap-3 bg-white rounded px-3 py-2 text-lg"
               >
-                <span class="flex items-center gap-2">
-                  <span>{{ player.name }}</span>
-                  <span v-if="gradeLabel(player)" class="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-800">{{ gradeLabel(player) }}</span>
+                <span class="flex items-center gap-2 min-w-0">
+                  <span class="truncate">{{ player.name }}</span>
+                  <span v-if="gradeLabel(player)" class="shrink-0 text-base px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">{{ gradeLabel(player) }}</span>
                 </span>
-                <span class="font-semibold">{{ player.rank }}</span>
+                <span class="font-semibold tabular-nums shrink-0">{{ player.rank }}</span>
               </li>
-              <li v-if="revealedPlayers(team).length === 0" class="text-sm text-gray-400">Chưa quay</li>
+              <li v-if="revealedPlayers(team).length === 0" class="text-lg text-gray-400">Chưa quay</li>
             </ul>
           </div>
         </div>
@@ -109,9 +122,9 @@
       </div>
       <div v-if="spotlight" data-spotlight class="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
         <div class="wheel-pop bg-gray-950/95 text-white rounded-3xl px-12 py-8 text-center shadow-2xl border-4 border-amber-400">
-          <div class="text-amber-300 text-sm font-semibold tracking-wide">{{ spotlight.team }}</div>
-            <div class="text-5xl font-black mt-3 leading-tight max-w-[80vw]">{{ spotlight.name }}</div>
-          <div v-if="spotlight.grade" class="text-3xl font-bold text-amber-200 mt-3">{{ spotlight.grade }}</div>
+          <div class="text-amber-300 text-xl font-semibold tracking-wide">{{ spotlight.team }}</div>
+            <div class="text-7xl font-black mt-3 leading-tight max-w-[80vw]">{{ spotlight.name }}</div>
+          <div v-if="spotlight.grade" class="text-5xl font-bold text-amber-200 mt-3">{{ spotlight.grade }}</div>
         </div>
       </div>
     </div>
@@ -119,6 +132,16 @@
 </template>
 
 <style>
+.wheel-layout {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .wheel-layout {
+    grid-template-columns: auto minmax(640px, 760px);
+  }
+}
 @keyframes wheel-pop {
   from { transform: scale(0.72); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -127,7 +150,7 @@
 </style>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { gradeForScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
@@ -150,10 +173,36 @@ const autoNote = ref('')
 const spotlight = ref(null)
 let audioCtx = null
 
-const wheelSize = computed(() => (wheelPlayers.value.length > 12 ? 460 : 400))
+const wheelBox = ref(null)
+const wheelSize = ref(860)
+const wheelBoxSize = computed(() => (
+  wheelPlayers.value.length > 12
+    ? 'min(calc(62vh), calc(98vw - 820px), 520px)'
+    : 'min(calc(68vh), calc(98vw - 780px), 620px)'
+))
 const slice = computed(() => 360 / Math.max(wheelPlayers.value.length, 1))
-const labelSize = computed(() => (wheelPlayers.value.length > 12 ? '11px' : '13px'))
-const bandCenter = computed(() => Math.round(wheelSize.value * 0.3))
+const labelSize = computed(() => {
+  const size = Math.round(wheelSize.value * (wheelPlayers.value.length > 12 ? 0.028 : 0.038))
+  return `${Math.max(size, 18)}px`
+})
+const hubSize = computed(() => Math.round(wheelSize.value * 0.14))
+const bandCenter = computed(() => Math.round(wheelSize.value * 0.32))
+
+let wheelObserver = null
+onMounted(() => {
+  const box = wheelBox.value
+  if (!box) return
+  const measure = () => {
+    if (spinning.value) return
+    wheelSize.value = box.clientWidth || wheelSize.value
+  }
+  measure()
+  wheelObserver = new ResizeObserver(measure)
+  wheelObserver.observe(box)
+})
+onUnmounted(() => {
+  if (wheelObserver) wheelObserver.disconnect()
+})
 
 function sliceColor(index) {
   const total = Math.max(wheelPlayers.value.length, 1)
@@ -179,8 +228,9 @@ const remainingPlayers = computed(() => {
 })
 
 const statusText = computed(() => {
+  if (completed.value && !spinning.value) return 'Đã quay xong. Bấm Xác nhận để chốt, hoặc Quay lại nếu chưa muốn.'
   if (autoNote.value) return autoNote.value
-  if (!selectedTeam.value) return 'Chọn một đội trước khi quay.'
+  if (!selectedTeam.value) return 'Chọn một team trước khi quay.'
   if (spinning.value && landedName.value) return `Vào ${selectedTeam.value.name}: ${landedName.value}`
   if (remainingPlayers.value.length === 0) return `${selectedTeam.value.name} đã đủ người.`
   return `${selectedTeam.value.name} còn ${remainingPlayers.value.length} người.`
@@ -207,9 +257,9 @@ function gradeLabel(player) {
   return gradeForScore(player.rank, props.bands)?.label || ''
 }
 
-const SPIN_MS = 2400
-const SPOT_MS = 1000
-const FLIP_MS = 550
+const SPIN_MS = 3600
+const SPOT_MS = 1300
+const FLIP_MS = 700
 
 function unrevealedGroups() {
   const left = new Set(wheelPlayers.value.map(playerKey))
@@ -290,12 +340,12 @@ function playTing() {
 }
 
 function easeWheel(t) {
-  if (t < 0.58) {
-    const u = t / 0.58
-    return (1 - (1 - u) * (1 - u)) * 0.84
+  if (t < 0.48) {
+    const u = t / 0.48
+    return (1 - (1 - u) * (1 - u)) * 0.8
   }
-  const u = (t - 0.58) / 0.42
-  return 0.84 + (1 - (1 - u) ** 3) * 0.16
+  const u = (t - 0.48) / 0.52
+  return 0.8 + (1 - (1 - u) ** 3) * 0.2
 }
 
 function animateTo(next) {
@@ -310,7 +360,7 @@ function animateTo(next) {
       const angle = from + (next - from) * easeWheel(t)
       rotation.value = angle
       const bucket = Math.floor(angle / sliceDeg)
-      if (bucket !== lastBucket && (now - lastTick > 55 || t > 0.58)) {
+      if (bucket !== lastBucket && (now - lastTick > 55 || t > 0.48)) {
         playTick()
         lastTick = now
         lastBucket = bucket
@@ -348,6 +398,15 @@ function textFlip(index) {
 
 function revealedPlayers(team) {
   return team.players.filter(player => revealedKeys.value.includes(playerKey(player)))
+}
+
+function teamTotal(team) {
+  return revealedPlayers(team).reduce((sum, player) => sum + Number(player.rank || 0), 0)
+}
+
+function formatPoints(value) {
+  const rounded = Math.round(Number(value) * 2) / 2
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
 }
 
 function revealedCount(team) {
@@ -415,7 +474,11 @@ async function finishIfComplete() {
   spinningTurn.value = false
   spotlight.value = null
   spinning.value = false
-  if (completed.value) emit('complete')
+}
+
+function confirm() {
+  if (!completed.value || spinning.value) return
+  emit('complete')
 }
 
 function close() {

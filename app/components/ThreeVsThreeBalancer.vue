@@ -72,14 +72,16 @@
             {{ player.rank ? categoryLabel(player.rank) : 'Chưa có điểm' }}
           </span>
           <input
-            :value="player.rank ?? ''"
+            :value="rankField(player)"
             type="number"
             min="1"
             max="23"
-            placeholder="Điểm"
+            step="0.5"
+            placeholder="8.5"
             class="w-16 px-2 py-1 rounded border text-right text-sm text-gray-800"
             @click.stop
-            @input="onRankInput(player, $event)"
+            @input="onRankDraft(player, $event)"
+            @change="commitRank(player, $event)"
           />
         </div>
       </div>
@@ -88,12 +90,12 @@
     <div v-if="result" class="mt-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">{{ result.matches.length }} trận 3v3<span v-if="result.bye"> · 1 đội chờ</span></h3>
+          <h3 class="text-xl font-bold text-gray-800">{{ result.matches.length * 2 + (result.bye ? 1 : 0) }} team</h3>
           <p class="text-sm text-gray-600">
-            {{ result.exact ? 'Đã xét hết cách ghép đội' : 'Đã dò các cách ghép đội' }}.
-            Chênh lệch lớn nhất trong một trận:
+            {{ result.exact ? 'Đã xét hết cách ghép' : 'Đã dò các cách ghép' }}.
+            Chênh lệch lớn nhất:
             <span class="font-semibold" :class="diffClass(result.matchDiff)">{{ result.matchDiff }} điểm</span>.
-            Đội mạnh nhất và yếu nhất lệch {{ result.pairDiff }} điểm.
+            Team mạnh nhất và yếu nhất lệch {{ result.pairDiff }} điểm.
             <span v-if="result.optionCount > 1"> · {{ result.optionCount }} phương án cùng mức</span>
           </p>
         </div>
@@ -121,13 +123,12 @@
           :key="index"
           class="border border-gray-200 rounded-lg p-4"
         >
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="font-bold text-gray-800">Trận {{ index + 1 }}</h4>
+          <div class="flex items-center justify-end mb-3">
             <span class="text-sm font-semibold" :class="diffClass(match.diff)">Lệch {{ match.diff }} điểm</span>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div
-              v-for="side in [{ name: 'Đội A', team: match.teamA }, { name: 'Đội B', team: match.teamB }]"
+              v-for="side in matchSides(match, index)"
               :key="side.name"
               class="rounded-lg p-3 border"
               :class="match.diff <= 3 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'"
@@ -156,7 +157,7 @@
         </div>
         <div v-if="result.bye" class="border border-gray-200 rounded-lg p-4">
           <div class="flex items-center justify-between mb-3">
-            <h4 class="font-bold text-gray-800">Đội chờ</h4>
+            <h4 class="font-bold text-gray-800">Team {{ result.matches.length * 2 + 1 }}</h4>
             <span class="text-sm font-semibold text-gray-600">{{ result.bye.totalPoints }} điểm</span>
           </div>
           <ul class="space-y-1">
@@ -176,6 +177,7 @@
           </ul>
         </div>
       </div>
+      <GroupDraw v-if="drawnTeams.length >= 2" :teams="drawnTeams" />
     </div>
     <FortuneWheel
       v-if="wheel"
@@ -191,7 +193,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { gradeScale, gradeForScore } from '../utils/playerGrade.js'
-import { planThreeVsThree } from '../utils/threeVsThree.js'
+import { teamsFromMatches } from '../utils/groupDraw.js'
 
 const props = defineProps({
   players: { type: Array, required: true }
@@ -244,11 +246,7 @@ const selectionHint = computed(() => {
     const extra = count % 3
     return `Cần số người chia hết cho 3. Bớt ${extra} người hoặc thêm ${3 - extra} người`
   }
-  const teamCount = count / 3
-  const matchCount = Math.floor(teamCount / 2)
-  return teamCount % 2 === 1
-    ? `${matchCount} trận · ${teamCount} đội, 1 đội chờ`
-    : `${matchCount} trận · ${teamCount} đội`
+  return `${count / 3} team`
 })
 
 const isSelected = (player) => selectedKeys.value.includes(player._key)
@@ -257,32 +255,35 @@ const toggleSelect = (player) => {
   const index = selectedKeys.value.indexOf(player._key)
   if (index >= 0) selectedKeys.value.splice(index, 1)
   else selectedKeys.value.push(player._key)
-  result.value = null
-  undoStack.value = []
-  options.value = []
 }
 
 const clearSelection = () => {
   selectedKeys.value = []
-  result.value = null
-  undoStack.value = []
-  options.value = []
 }
 
 const selectAllRanked = () => {
   selectedKeys.value = keyedPlayers.value.filter(player => player.rank >= 1).map(player => player._key)
-  result.value = null
-  undoStack.value = []
-  options.value = []
 }
 
-const onRankInput = (player, event) => {
-  const raw = event.target.value
-  const rank = raw === '' ? null : Number(raw)
+const rankDraft = ref({})
+
+const rankField = (player) => (
+  Object.prototype.hasOwnProperty.call(rankDraft.value, player._key)
+    ? rankDraft.value[player._key]
+    : (player.rank ?? '')
+)
+
+const onRankDraft = (player, event) => {
+  rankDraft.value = { ...rankDraft.value, [player._key]: event.target.value }
+}
+
+const commitRank = (player, event) => {
+  const raw = String(event?.target?.value ?? rankDraft.value[player._key] ?? '').trim()
+  const next = { ...rankDraft.value }
+  delete next[player._key]
+  rankDraft.value = next
+  const rank = raw === '' ? null : Math.round(Number(raw) * 2) / 2
   emit('rank-change', { name: player.name, rank: Number.isFinite(rank) ? rank : null })
-  result.value = null
-  undoStack.value = []
-  options.value = []
 }
 
 const categoryLabel = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Chưa có điểm'
@@ -292,6 +293,11 @@ const diffClass = (diff) => {
   if (diff === 3) return 'text-yellow-700'
   return 'text-amber-700'
 }
+
+const drawnTeams = computed(() => {
+  if (!result.value || wheel.value) return []
+  return teamsFromMatches(result.value.matches, result.value.bye)
+})
 
 const applyOption = (option, plan) => {
   result.value = {
@@ -319,12 +325,17 @@ const generate = () => {
   isSplitting.value = false
 }
 
+const matchSides = (match, index) => [
+  { name: `Team ${index * 2 + 1}`, team: match.teamA },
+  { name: `Team ${index * 2 + 2}`, team: match.teamB }
+]
+
 const openWheel = (option) => {
   const teams = option.matches.flatMap((match, index) => [
-    { id: `${index}-A`, name: `Trận ${index + 1} · Đội A`, players: match.teamA.players },
-    { id: `${index}-B`, name: `Trận ${index + 1} · Đội B`, players: match.teamB.players }
+    { id: `${index}-A`, name: `Team ${index * 2 + 1}`, players: match.teamA.players },
+    { id: `${index}-B`, name: `Team ${index * 2 + 2}`, players: match.teamB.players }
   ])
-  if (option.bye) teams.push({ id: 'bye', name: 'Đội chờ', players: option.bye.players })
+  if (option.bye) teams.push({ id: 'bye', name: `Team ${teams.length + 1}`, players: option.bye.players })
   wheel.value = {
     players: teams.flatMap(team => team.players),
     teams
@@ -357,9 +368,9 @@ const closeWheel = () => {
 }
 
 const undoSplit = () => {
-  if (undoStack.value.length === 0) return
-  result.value = undoStack.value[undoStack.value.length - 1]
-  undoStack.value = undoStack.value.slice(0, -1)
+  result.value = null
+  undoStack.value = []
+  options.value = []
   wheel.value = null
   pendingOption.value = null
 }

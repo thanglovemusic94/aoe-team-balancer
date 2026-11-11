@@ -72,6 +72,8 @@
       </div>
     </div>
     
+    <GroupDraw :teams="teams" />
+
     <!-- Nút chia lại -->
     <div class="mt-8 text-center">
       <div v-if="!isAdmin" class="mb-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">

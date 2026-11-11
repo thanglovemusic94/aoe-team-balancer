@@ -576,7 +576,7 @@
           </div>
         </div>
 
-        <div v-if="activeTab === 'threes'" class="space-y-8">
+        <div v-show="activeTab === 'threes'" class="space-y-8">
           <ThreeVsThreeBalancer
             v-if="namedPlayers.length >= 6"
             :players="namedPlayers"
@@ -598,7 +598,7 @@
           </div>
         </div>
 
-        <div v-if="activeTab === 'twos'" class="space-y-8">
+        <div v-show="activeTab === 'twos'" class="space-y-8">
           <TwoVsTwoBalancer
             v-if="namedPlayers.length >= 4"
             :players="namedPlayers"
@@ -620,7 +620,7 @@
           </div>
         </div>
 
-        <div v-if="activeTab === 'eight'" class="space-y-8">
+        <div v-show="activeTab === 'eight'" class="space-y-8">
           <EightPlayerBalancer
             v-if="namedPlayers.length >= 8"
             :players="namedPlayers"
@@ -659,7 +659,7 @@
               ✅ Đã có {{ players.length }} người chơi
             </div>
             <p class="text-green-700 mb-4">
-              Danh sách dùng chung cho mọi kiểu chia. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 3 và từ 6 người trở lên, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
+              Danh sách dùng chung cho mọi kiểu chia. Điểm có thể là số lẻ 0.5, ví dụ 8.5 hay 9.5, và hạng tính theo đúng điểm đó. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 3 và từ 6 người trở lên, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
             </p>
             <div class="flex flex-wrap justify-center gap-2">
               <button
@@ -726,7 +726,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { gradeScale, countByGrade } from '../utils/playerGrade.js'
+import { gradeScale, countByGrade, normalizeScore } from '../utils/playerGrade.js'
 
 // Add Tailwind CSS and Open Graph meta tags
 useHead({
@@ -870,7 +870,8 @@ const handlePlayersUpdate = (updatedPlayers) => {
 const updatePlayerRank = ({ name, rank }) => {
   const index = players.value.findIndex(player => player && player.name === name)
   if (index < 0) return
-  players.value[index] = { ...players.value[index], rank }
+  const score = rank == null || rank === '' ? null : normalizeScore(rank)
+  players.value[index] = { ...players.value[index], rank: Number.isFinite(score) ? score : null }
 }
 
 const handleTeamsGenerated = (generatedTeams) => {

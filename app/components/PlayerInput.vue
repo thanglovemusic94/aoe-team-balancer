@@ -74,13 +74,15 @@
             </td>
             <td class="border border-gray-300 px-2 py-1">
               <input
-                v-model.number="player.rank"
+                :value="player.rank ?? ''"
                 type="number"
                 min="1"
-                placeholder="Nhập điểm..."
+                step="0.5"
+                placeholder="8.5"
                 :disabled="!isAdmin"
                 class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 :class="{ 'bg-gray-100 cursor-not-allowed': !isAdmin }"
+                @input="player.rank = $event.target.value"
               />
             </td>
             <td class="border border-gray-300 px-2 py-1 text-center">
@@ -250,7 +252,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { gradeScale, gradeForScore, countByGrade } from '../utils/playerGrade.js'
+import { gradeScale, gradeForScore, countByGrade, normalizeScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   existingPlayers: {
@@ -543,8 +545,13 @@ const addPlayers = () => {
   // Format data
   const formattedPlayers = validPlayers.map(p => ({
     name: p.name.trim(),
-    rank: p.rank
+    rank: normalizeScore(p.rank)
   }))
+
+  if (formattedPlayers.some(p => p.rank == null || p.rank < 1)) {
+    error.value = 'Điểm số phải từ 1 trở lên. Có thể dùng số lẻ như 8.5 hoặc 9.5.'
+    return
+  }
   
   success.value = `✅ Đã xác nhận ${formattedPlayers.length} người chơi.`
   emit('players-submitted', formattedPlayers)
