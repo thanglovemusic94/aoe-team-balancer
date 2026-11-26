@@ -48,8 +48,7 @@
         v-for="player in selectedPlayers"
         :key="player._key"
         @click="toggleSelect(player)"
-        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border"
-        :class="badgeClass(player.rank)"
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border bg-gray-100 text-gray-800 border-gray-300"
         title="Bấm để bỏ chọn"
       >
         <span>{{ player.name }}</span>
@@ -71,8 +70,8 @@
       >
         <div class="font-medium">{{ player.name }}</div>
         <div class="mt-2 flex items-center justify-between gap-2 text-sm">
-          <span class="px-2 py-0.5 rounded-full text-xs" :class="isSelected(player) ? 'bg-white/20' : badgeClass(player.rank)">
-            {{ player.rank ? categoryLabel(player.rank) : 'Chưa có điểm' }}
+          <span v-if="!player.rank" class="px-2 py-0.5 rounded-full text-xs" :class="isSelected(player) ? 'bg-white/20' : 'bg-gray-100 text-gray-600'">
+            Chưa có điểm
           </span>
           <input
             :value="rankField(player)"
@@ -149,18 +148,10 @@
               :key="player._key"
               class="flex items-center justify-between bg-white rounded px-3 py-2"
             >
-              <div class="flex items-center gap-2">
-                <span class="font-medium text-gray-800">{{ player.name }}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full" :class="badgeClass(player.rank)">
-                  {{ categoryLabel(player.rank) }}
-                </span>
-              </div>
+              <span class="font-medium text-gray-800">{{ player.name }}</span>
               <span class="font-semibold text-gray-700">{{ player.rank }}</span>
             </li>
           </ul>
-          <div class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-            <span v-for="item in gradeSummary(team.players, rosterScale.bands)" :key="item.id">{{ item.label }}: {{ item.count }}</span>
-          </div>
         </div>
       </div>
       <GroupDraw v-if="drawnTeams.length >= 2" :teams="drawnTeams" />
@@ -178,7 +169,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { gradeScale, gradeForScore, gradeSummary } from '../utils/playerGrade.js'
+import { gradeScale, gradeForScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: { type: Array, required: true },
@@ -292,15 +283,11 @@ const rosterScale = computed(() => gradeScale(props.players))
 
 const categoryOf = (rank) => gradeForScore(rank, rosterScale.value.bands)?.id || ''
 
-const categoryLabel = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Chưa có điểm'
-
 const cardClass = (player) => {
   if (isSelected(player)) return 'bg-blue-600 border-blue-700 text-white cursor-pointer'
   if (selectedPlayers.value.length >= 8) return 'bg-gray-50 border-gray-200 text-gray-400'
   return 'bg-white border-gray-200 hover:border-blue-400 text-gray-800 cursor-pointer'
 }
-
-const badgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-600 border border-gray-300'
 
 const diffClass = (diff) => {
   if (diff <= 2) return 'text-green-700'

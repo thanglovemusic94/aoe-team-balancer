@@ -66,12 +66,7 @@
             :key="player._key"
             class="flex items-center justify-between bg-white rounded px-3 py-2 text-gray-800"
           >
-            <span class="flex items-center gap-2">
-              <span class="font-medium">{{ player.name }}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full" :class="badgeClass(player.rank)">
-                {{ categoryLabel(player.rank) }}
-              </span>
-            </span>
+            <span class="font-medium">{{ player.name }}</span>
             <span class="flex items-center gap-2">
               <span class="font-semibold">{{ player.rank }}</span>
               <button @click="removePlayer(player)" class="text-red-600 text-sm" title="Bỏ khỏi đội">✕</button>
@@ -84,7 +79,7 @@
 
     <div v-if="comparison" class="mb-6 rounded-lg border p-4" :class="comparison.boxClass">
       <h3 class="text-xl font-bold mb-1">{{ comparison.title }}</h3>
-      <p class="mb-4">{{ comparison.detail }}</p>
+      <p v-if="comparison.detail" class="mb-4">{{ comparison.detail }}</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
         <div class="bg-white/80 rounded p-3 text-gray-800">
           <div class="text-gray-500">Tổng điểm</div>
@@ -110,9 +105,7 @@
       >
         <div class="font-medium">{{ player.name }}</div>
         <div class="mt-1 flex items-center justify-between gap-2 text-sm">
-          <span class="px-2 py-0.5 rounded-full text-xs" :class="badgeClass(player.rank)">
-            {{ player.rank ? categoryLabel(player.rank) : 'Chưa có điểm' }}
-          </span>
+          <span v-if="!player.rank" class="text-xs text-gray-500">Chưa có điểm</span>
           <span class="font-semibold">{{ player.rank ?? '—' }}</span>
         </div>
         <div class="mt-2 flex gap-2">
@@ -140,7 +133,6 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { gradeScale, gradeForScore, gradeSummary } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: { type: Array, required: true }
@@ -161,7 +153,6 @@ const keyedPlayers = computed(() =>
     .filter(player => player.name)
 )
 
-const rosterScale = computed(() => gradeScale(props.players))
 const rankedCount = computed(() => keyedPlayers.value.filter(player => player.rank >= 1).length)
 const byKey = computed(() => new Map(keyedPlayers.value.map(player => [player._key, player])))
 
@@ -204,7 +195,6 @@ const comparison = computed(() => {
     const best = sorted(players)[0]
     return `${best.name} ${best.rank}`
   }
-  const grades = (players) => gradeSummary(players, rosterScale.value.bands).map(item => `${item.label} ×${item.count}`).join(', ')
   let title = 'Hai đội cân bằng'
   let boxClass = 'border-gray-300 bg-gray-50 text-gray-800'
   if (totalA > totalB) {
@@ -216,7 +206,7 @@ const comparison = computed(() => {
   }
   return {
     title,
-    detail: `Hạng Đội A: ${grades(teamA.value) || '—'}. Hạng Đội B: ${grades(teamB.value) || '—'}.`,
+    detail: '',
     boxClass,
     totalA,
     totalB,
@@ -261,9 +251,6 @@ const setMode = (size) => {
   teamSize.value = size
   clearTeams()
 }
-
-const categoryLabel = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Chưa có điểm'
-const badgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-600 border border-gray-300'
 
 const cardClass = (player) => {
   if (teamOf(player) === 'A') return 'border-blue-500 bg-blue-50'

@@ -55,7 +55,6 @@
             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">#</th>
             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Tên Game</th>
             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Điểm</th>
-            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">Loại</th>
             <th class="border border-gray-300 px-3 py-2 text-center text-sm font-semibold">Thao Tác</th>
           </tr>
         </thead>
@@ -84,16 +83,6 @@
                 :class="{ 'bg-gray-100 cursor-not-allowed': !isAdmin }"
                 @input="player.rank = $event.target.value"
               />
-            </td>
-            <td class="border border-gray-300 px-2 py-1 text-center">
-              <span 
-                v-if="player.rank" 
-                class="text-xs px-2 py-1 rounded-full inline-block"
-                :class="getRankBadgeClass(player.rank)"
-              >
-                {{ getRankCategory(player.rank) }}
-              </span>
-              <span v-else class="text-gray-400 text-xs">-</span>
             </td>
             <td class="border border-gray-300 px-2 py-1 text-center">
               <div class="flex justify-center space-x-1">
@@ -129,16 +118,6 @@
       <div class="text-center mb-3">
         <div class="font-semibold text-gray-700">Tổng người chơi</div>
         <div class="text-lg font-bold text-blue-600">{{ playerCount }} người</div>
-      </div>
-      <p v-if="rosterScale.min != null" class="text-center text-xs text-gray-500 mb-3">
-        Loại tính từ điểm thấp nhất {{ rosterScale.min }} đến cao nhất {{ rosterScale.max }}
-      </p>
-      <div class="grid grid-cols-4 md:grid-cols-8 gap-2 text-sm">
-        <div v-for="grade in rosterScale.bands" :key="grade.id" class="text-center">
-          <div class="font-semibold" :class="grade.textClass">{{ grade.label }}</div>
-          <div class="text-xs text-gray-500">{{ grade.rangeLabel }}</div>
-          <div class="text-lg font-bold text-gray-800">{{ countByGrade(players, grade.id, rosterScale.bands) }}</div>
-        </div>
       </div>
     </div>
 
@@ -252,7 +231,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { gradeScale, gradeForScore, countByGrade, normalizeScore } from '../utils/playerGrade.js'
+import { normalizeScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   existingPlayers: {
@@ -507,12 +486,6 @@ const fillRandomPlayer = (index) => {
 }
 
 // Lấy class cho badge category
-const rosterScale = computed(() => gradeScale(players.value))
-
-const getRankBadgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
-
-const getRankCategory = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'N/A'
-
 const addPlayers = () => {
   if (!requireAdminForAction('xác nhận danh sách người chơi')) return
   

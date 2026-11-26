@@ -81,6 +81,22 @@ function perfectMatchings(items) {
   return found
 }
 
+function strongestApart(players) {
+  const sorted = [...players].sort((a, b) => b.rank - a.rank || String(a._key ?? '').localeCompare(String(b._key ?? '')))
+  if (sorted.length < 2) return []
+  const topScore = sorted[0].rank
+  const tiedForTop = sorted.filter(player => player.rank === topScore)
+  const teamCount = players.length / 3
+  if (tiedForTop.length >= 2 && tiedForTop.length <= teamCount) return tiedForTop
+  return [sorted[0], sorted[1]]
+}
+
+function keepsStrongestApart(teams, separated) {
+  if (!separated || separated.length < 2) return true
+  const keys = new Set(separated.map(player => player._key))
+  return teams.every(team => team.filter(player => keys.has(player._key)).length <= 1)
+}
+
 function snakeTeams(players) {
   const sorted = [...players].sort((a, b) => b.rank - a.rank || a._key.localeCompare(b._key))
   const teamCount = players.length / 3
@@ -102,6 +118,7 @@ function snakeTeams(players) {
 }
 
 function consider(teams, state, limit) {
+  if (!keepsStrongestApart(teams, state.separated)) return
   const key = teamKey(teams)
   if (state.seen.has(key)) return
   const score = scoreTeams(teams)
@@ -139,7 +156,9 @@ function enumerateBest(players, state) {
     used[start] = true
     const choose = (from, chosen) => {
       if (chosen.length === 2) {
-        groups.push([players[start], chosen[0], chosen[1]])
+        const group = [players[start], chosen[0], chosen[1]]
+        if (!keepsStrongestApart([group], state.separated)) return
+        groups.push(group)
         walk()
         groups.pop()
         return
@@ -159,7 +178,7 @@ function enumerateBest(players, state) {
   walk()
 }
 
-function improveTeams(teams, rounds) {
+function improveTeams(teams, rounds, state) {
   let current = teams.map(team => [...team])
   let currentScore = scoreTeams(current)
   for (let round = 0; round < rounds; round++) {
@@ -170,6 +189,7 @@ function improveTeams(teams, rounds) {
     const slotA = Math.floor(Math.random() * next[first].length)
     const slotB = Math.floor(Math.random() * next[second].length)
     ;[next[first][slotA], next[second][slotB]] = [next[second][slotB], next[first][slotA]]
+    if (!keepsStrongestApart(next, state.separated)) continue
     const nextScore = scoreTeams(next)
     const better = nextScore.diff < currentScore.diff || (nextScore.diff === currentScore.diff && nextScore.variance <= currentScore.variance)
     if (better || Math.random() < 0.02) {
@@ -180,20 +200,30 @@ function improveTeams(teams, rounds) {
   return current
 }
 
-function randomTeams(players) {
-  const shuffled = shuffle(players)
-  const teams = []
-  for (let index = 0; index < shuffled.length; index += 3) {
-    teams.push([shuffled[index], shuffled[index + 1], shuffled[index + 2]])
+function randomTeams(players, separated) {
+  const teamCount = players.length / 3
+  const teams = Array.from({ length: teamCount }, () => [])
+  const reserved = new Set(separated.map(player => player._key))
+  const slots = shuffle([...Array(teamCount).keys()])
+  separated.forEach((player, index) => {
+    teams[slots[index % teamCount]].push(player)
+  })
+  const rest = shuffle(players.filter(player => !reserved.has(player._key)))
+  let cursor = 0
+  for (const team of teams) {
+    while (team.length < 3 && cursor < rest.length) {
+      team.push(rest[cursor])
+      cursor += 1
+    }
   }
   return teams
 }
 
 function searchBest(players, state) {
   const seeds = [snakeTeams(players)]
-  for (let index = 0; index < 30; index++) seeds.push(improveTeams(seeds[0], 40))
+  for (let index = 0; index < 30; index++) seeds.push(improveTeams(seeds[0], 40, state))
   for (let index = 0; index < 60; index++) {
-    seeds.push(improveTeams(randomTeams(players), players.length * 15))
+    seeds.push(improveTeams(randomTeams(players, state.separated), players.length * 15, state))
   }
   seeds.forEach(teams => {
     state.examined += 1
@@ -207,10 +237,12 @@ export function planThreeVsThree(players) {
     bestDiff: Infinity,
     bestVariance: Infinity,
     best: [],
-    seen: new Set()
+    seen: new Set(),
+    separated: strongestApart(players)
   }
   if (players.length <= 12) enumerateBest(players, state)
   else searchBest(players, state)
+  if (state.best.length === 0) consider(snakeTeams(players), state, 24)
 
   const options = state.best.map(teams => {
     const arranged = arrangeTeams(teams)

@@ -48,27 +48,13 @@
             :key="index"
             class="flex justify-between items-center p-2 bg-gray-50 rounded"
           >
-            <div class="flex items-center gap-2">
-              <span class="font-medium text-gray-800">{{ player.name }}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full" :class="getRankBadgeClass(player.rank)">
-                {{ getRankCategory(player.rank) }}
-              </span>
-            </div>
-            <span 
-              class="px-2 py-1 rounded text-sm font-semibold"
-              :class="getPlayerRankClass(player.rank)"
-            >
+            <span class="font-medium text-gray-800">{{ player.name }}</span>
+            <span class="px-2 py-1 rounded text-sm font-semibold text-gray-800">
               {{ player.rank }}
             </span>
           </div>
         </div>
         
-        <!-- Phân loại thành viên -->
-        <div class="mt-4 pt-3 border-t border-gray-200">
-          <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-            <span v-for="item in gradeSummary(team.players, gradeBands)" :key="item.id">{{ item.label }}: {{ item.count }}</span>
-          </div>
-        </div>
       </div>
     </div>
     
@@ -110,7 +96,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { gradeScale, gradeForScore, gradeSummary } from '../utils/playerGrade.js'
 
 const props = defineProps({
   teams: {
@@ -121,17 +106,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  gradeBands: {
-    type: Array,
-    default: () => []
-  }
 })
-
-const gradeBands = computed(() => (
-  props.gradeBands.length
-    ? props.gradeBands
-    : gradeScale(props.teams.flatMap(team => team.players || [])).bands
-))
 
 const emit = defineEmits(['regenerate', 'require-admin'])
 
@@ -188,13 +163,7 @@ const getTeamPointsClass = (points) => {
   return 'text-red-600'
 }
 
-const getPlayerRankClass = (rank) => gradeForScore(rank, gradeBands.value)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
-
-const getRankBadgeClass = (rank) => getPlayerRankClass(rank)
-
-const getRankCategory = (rank) => gradeForScore(rank, gradeBands.value)?.label || 'N/A'
-
-// Sắp xếp players trong team: Trụ Cột → Trung Bình → Hỗ Trợ
+// Sắp xếp players trong team theo điểm, cao xuống thấp
 const getSortedPlayersForTeam = (players) => {
   return [...players].sort((a, b) => {
     // Trụ Cột (14-17) = 3

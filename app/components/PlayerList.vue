@@ -17,8 +17,7 @@
       <div 
         v-for="(player, index) in sortedPlayers" 
         :key="index"
-        class="bg-gray-50 rounded-lg p-4 border-l-4 relative"
-        :class="getRankClass(player.rank)"
+        class="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-300 relative"
       >
         <div class="flex justify-between items-center mb-2">
           <div class="flex-1">
@@ -34,11 +33,8 @@
               @blur="finishEdit"
               @keyup.enter="finishEdit"
             />
-            <span class="text-xs px-2 py-0.5 rounded-full mt-1 inline-block" :class="getRankBadgeClass(player.rank)">
-              {{ getRankCategory(player.rank) }}
-            </span>
           </div>
-          <span class="text-lg font-bold ml-2" :class="getRankTextClass(player.rank)">
+          <span class="text-lg font-bold ml-2 text-gray-800">
             <input
               v-if="editingPlayer === player"
               :value="editingPlayer.rank ?? ''"
@@ -76,7 +72,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { gradeScale, gradeForScore, normalizeScore } from '../utils/playerGrade.js'
+import { normalizeScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: {
@@ -96,26 +92,6 @@ const sortedPlayers = computed(() => {
 const totalPoints = computed(() => {
   return props.players.reduce((sum, player) => sum + player.rank, 0)
 })
-
-const getRankClass = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'border-red-500'
-  if (rank >= 7 && rank <= 16) return 'border-yellow-500'
-  if (rank >= 1 && rank <= 6) return 'border-green-500'
-  return 'border-gray-500'
-}
-
-const getRankTextClass = (rank) => {
-  if (rank >= 17 && rank <= 23) return 'text-red-600'
-  if (rank >= 7 && rank <= 16) return 'text-yellow-600'
-  if (rank >= 1 && rank <= 6) return 'text-green-600'
-  return 'text-gray-600'
-}
-
-const rosterScale = computed(() => gradeScale(props.players))
-
-const getRankBadgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-700 border border-gray-300'
-
-const getRankCategory = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Không xác định'
 
 const editPlayer = (player) => {
   editingPlayer.value = player

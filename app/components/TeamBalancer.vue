@@ -65,11 +65,20 @@
         </div>
       </div>
     </div>
+    <FortuneWheel
+      v-if="wheel"
+      :players="wheel.players"
+      :teams="wheel.teams"
+      :bands="gradeBands"
+      @complete="confirmWheel"
+      @close="closeWheel"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { gradeScale } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: {
@@ -91,10 +100,24 @@ const emit = defineEmits(['teams-generated', 'require-admin'])
 const isGenerating = ref(false)
 const algorithmSteps = ref([])
 const showAlgorithmSteps = ref(false) // Flag để thu gọn phần quá trình chia team
+const wheel = ref(null)
+const pendingTeams = ref(null)
+const gradeBands = computed(() => gradeScale(props.players).bands)
 
 // Toggle function cho dropdown
 const toggleAlgorithmSteps = () => {
   showAlgorithmSteps.value = !showAlgorithmSteps.value
+}
+
+const confirmWheel = () => {
+  if (pendingTeams.value) emit('teams-generated', pendingTeams.value)
+  pendingTeams.value = null
+  wheel.value = null
+}
+
+const closeWheel = () => {
+  pendingTeams.value = null
+  wheel.value = null
 }
 
 const generateTeams = async () => {
@@ -172,8 +195,16 @@ const generateTeams = async () => {
     const balancedTeams = await balanceTeamsRandomly(teams, remainingPlayers, globalHighestPlayer, globalLowestPlayer)
     
     algorithmSteps.value.push('🎉 Hoàn thành! Đã chia team cân bằng ngẫu nhiên')
-    
-    emit('teams-generated', balancedTeams)
+
+    pendingTeams.value = balancedTeams
+    wheel.value = {
+      players: balancedTeams.flatMap(team => team.players),
+      teams: balancedTeams.map(team => ({
+        id: String(team.id),
+        name: team.name,
+        players: team.players
+      }))
+    }
     
   } catch (error) {
     algorithmSteps.value.push(`❌ Lỗi: ${error.message}`)

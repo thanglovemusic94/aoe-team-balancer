@@ -36,7 +36,7 @@
                 <span class="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-bold leading-none text-white" :style="{ fontSize: labelSize, textShadow: '0 1px 2px rgba(0,0,0,0.9)' }">
                   <span class="block" :style="{ transform: textFlip(index) }">
                     <span class="block">{{ player.name }}</span>
-                    <span v-if="gradeLabel(player)" class="mt-1 block text-[0.85em]">{{ gradeLabel(player) }}</span>
+                    <span v-if="player.rank != null" class="mt-1 block text-[0.85em]">{{ player.rank }}</span>
                   </span>
                 </span>
               </div>
@@ -109,7 +109,6 @@
               >
                 <span class="flex items-center gap-2 min-w-0">
                   <span class="truncate">{{ player.name }}</span>
-                  <span v-if="gradeLabel(player)" class="shrink-0 text-base px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">{{ gradeLabel(player) }}</span>
                 </span>
                 <span class="font-semibold tabular-nums shrink-0">{{ player.rank }}</span>
               </li>
@@ -124,7 +123,7 @@
         <div class="wheel-pop bg-gray-950/95 text-white rounded-3xl px-12 py-8 text-center shadow-2xl border-4 border-amber-400">
           <div class="text-amber-300 text-xl font-semibold tracking-wide">{{ spotlight.team }}</div>
             <div class="text-7xl font-black mt-3 leading-tight max-w-[80vw]">{{ spotlight.name }}</div>
-          <div v-if="spotlight.grade" class="text-5xl font-bold text-amber-200 mt-3">{{ spotlight.grade }}</div>
+          <div v-if="spotlight.score != null" class="text-5xl font-bold text-amber-200 mt-3">{{ spotlight.score }}</div>
         </div>
       </div>
     </div>
@@ -151,7 +150,6 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { gradeForScore } from '../utils/playerGrade.js'
 
 const props = defineProps({
   players: { type: Array, required: true },
@@ -253,10 +251,6 @@ watch(() => props.players.map(playerKey).join('|'), () => {
   selectedTeamId.value = props.teams[0]?.id || ''
 })
 
-function gradeLabel(player) {
-  return gradeForScore(player.rank, props.bands)?.label || ''
-}
-
 const SPIN_MS = 3600
 const SPOT_MS = 1300
 const FLIP_MS = 700
@@ -278,7 +272,7 @@ async function placeGroup(group) {
     if (!revealedKeys.value.includes(playerKey(player))) {
       revealedKeys.value = [...revealedKeys.value, playerKey(player)]
     }
-    shown.push(`${player.name}${gradeLabel(player) ? ' (' + gradeLabel(player) + ')' : ''}`)
+    shown.push(player.rank != null ? `${player.name} ${player.rank}` : player.name)
     autoNote.value = `Còn lại vào ${group.team.name}: ${shown.join(', ')}`
     landedName.value = player.name
     await showSpotlight(player, group.team.name, FLIP_MS)
@@ -376,7 +370,7 @@ function animateTo(next) {
 }
 
 async function showSpotlight(player, teamName, duration) {
-  spotlight.value = { name: player.name, grade: gradeLabel(player), team: teamName }
+  spotlight.value = { name: player.name, score: player.rank, team: teamName }
   playTing()
   await wait(duration)
   spotlight.value = null
@@ -455,7 +449,7 @@ async function spinSelectedTeam() {
     spinningTurn.value = true
     await nextTick()
     await animateTo(targetRotation(player))
-    landedName.value = `${player.name}${gradeLabel(player) ? ' (' + gradeLabel(player) + ')' : ''}`
+    landedName.value = player.rank != null ? `${player.name} ${player.rank}` : player.name
     revealedKeys.value = [...revealedKeys.value, playerKey(player)]
     const total = props.teams.reduce((sum, team) => sum + team.players.length, 0)
     if (!completed.value && revealedKeys.value.length >= total) completed.value = true

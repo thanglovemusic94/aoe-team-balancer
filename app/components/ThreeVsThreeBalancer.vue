@@ -4,7 +4,7 @@
       Chọn danh sách, chia trận 3v3
     </h2>
     <p class="text-gray-600 mb-4">
-      Mỗi đội 3 người. Chọn số người chia hết cho 3, từ 6 người trở lên. Số đội lẻ vẫn được chia cân bằng, đội còn lại chờ trận sau.
+      Mỗi đội 3 người. Chọn số người chia hết cho 3, từ 6 người trở lên. Hai người điểm cao nhất không vào cùng một team. Số đội lẻ vẫn được chia cân bằng, đội còn lại chờ trận sau.
     </p>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -49,8 +49,7 @@
         v-for="player in selectedPlayers"
         :key="player._key"
         @click="toggleSelect(player)"
-        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border"
-        :class="badgeClass(player.rank)"
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border bg-gray-100 text-gray-800 border-gray-300"
         title="Bấm để bỏ chọn"
       >
         <span>{{ player.name }}</span>
@@ -68,8 +67,8 @@
       >
         <div class="font-medium">{{ player.name }}</div>
         <div class="mt-2 flex items-center justify-between gap-2 text-sm">
-          <span class="px-2 py-0.5 rounded-full text-xs" :class="isSelected(player) ? 'bg-white/20' : badgeClass(player.rank)">
-            {{ player.rank ? categoryLabel(player.rank) : 'Chưa có điểm' }}
+          <span v-if="!player.rank" class="px-2 py-0.5 rounded-full text-xs" :class="isSelected(player) ? 'bg-white/20' : 'bg-gray-100 text-gray-600'">
+            Chưa có điểm
           </span>
           <input
             :value="rankField(player)"
@@ -143,12 +142,7 @@
                   :key="player._key"
                   class="flex items-center justify-between bg-white rounded px-2 py-1"
                 >
-                  <span class="flex items-center gap-2">
-                    <span class="font-medium text-gray-800">{{ player.name }}</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full" :class="badgeClass(player.rank)">
-                      {{ categoryLabel(player.rank) }}
-                    </span>
-                  </span>
+                  <span class="font-medium text-gray-800">{{ player.name }}</span>
                   <span class="font-semibold text-gray-700">{{ player.rank }}</span>
                 </li>
               </ul>
@@ -166,12 +160,7 @@
               :key="player._key"
               class="flex items-center justify-between bg-gray-50 rounded px-2 py-1"
             >
-              <span class="flex items-center gap-2">
-                <span class="font-medium text-gray-800">{{ player.name }}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full" :class="badgeClass(player.rank)">
-                  {{ categoryLabel(player.rank) }}
-                </span>
-              </span>
+              <span class="font-medium text-gray-800">{{ player.name }}</span>
               <span class="font-semibold text-gray-700">{{ player.rank }}</span>
             </li>
           </ul>
@@ -192,7 +181,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { gradeScale, gradeForScore } from '../utils/playerGrade.js'
+import { gradeScale } from '../utils/playerGrade.js'
 import { teamsFromMatches } from '../utils/groupDraw.js'
 
 const props = defineProps({
@@ -286,8 +275,6 @@ const commitRank = (player, event) => {
   emit('rank-change', { name: player.name, rank: Number.isFinite(rank) ? rank : null })
 }
 
-const categoryLabel = (rank) => gradeForScore(rank, rosterScale.value.bands)?.label || 'Chưa có điểm'
-const badgeClass = (rank) => gradeForScore(rank, rosterScale.value.bands)?.badgeClass || 'bg-gray-100 text-gray-600 border border-gray-300'
 const diffClass = (diff) => {
   if (diff <= 2) return 'text-green-700'
   if (diff === 3) return 'text-yellow-700'

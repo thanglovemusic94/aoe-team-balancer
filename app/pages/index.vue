@@ -45,22 +45,6 @@
                  <!-- Nội dung có thể thu gọn -->
                  <div v-show="showScoringSystem" class="px-6 pb-6">
                  
-                 <p v-if="rosterScale.min != null" class="text-sm text-gray-600 text-center mb-4">
-                   Hạng chia theo điểm hiện tại: thấp nhất {{ rosterScale.min }}, cao nhất {{ rosterScale.max }}.
-                 </p>
-                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                   <div
-                     v-for="grade in rosterScale.bands"
-                     :key="grade.id"
-                     class="rounded-xl border bg-white p-4 text-center shadow-sm"
-                   >
-                     <div class="text-2xl font-bold" :class="grade.textClass">{{ grade.label }}</div>
-                     <div class="text-sm text-gray-500 mb-2">{{ grade.rangeLabel }} điểm</div>
-                     <div class="text-3xl font-bold text-gray-800">{{ countByGrade(rankedPlayers, grade.id, rosterScale.bands) }}</div>
-                     <div class="text-xs text-gray-500">người chơi</div>
-                   </div>
-                 </div>
-                 
                  <!-- Thống kê tổng quan -->
                  <div v-if="players.length > 0" class="mt-6 bg-white rounded-lg p-4 border border-gray-200">
                    <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
@@ -520,7 +504,7 @@
             @teams-generated="handleTeamsGenerated"
             @require-admin="handleRequireAdmin"
           />
-                 <TeamResults v-if="teams.length > 0" :teams="teams" :grade-bands="rosterScale.bands" :is-admin="isAdmin" @regenerate="handleRegenerate" @require-admin="handleRequireAdmin" />
+                 <TeamResults v-if="teams.length > 0" :teams="teams" :is-admin="isAdmin" @regenerate="handleRegenerate" @require-admin="handleRequireAdmin" />
           
           <!-- Thông báo nếu chưa có đủ người chơi -->
           <div v-if="rankedPlayers.length < 4" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
@@ -659,7 +643,7 @@
               ✅ Đã có {{ players.length }} người chơi
             </div>
             <p class="text-green-700 mb-4">
-              Danh sách dùng chung cho mọi kiểu chia. Điểm có thể là số lẻ 0.5, ví dụ 8.5 hay 9.5, và hạng tính theo đúng điểm đó. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 3 và từ 6 người trở lên, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
+              Danh sách dùng chung cho mọi kiểu chia. Điểm có thể là số lẻ 0.5, ví dụ 8.5 hay 9.5. 2v2 chọn số người chia hết cho 4, 3v3 chọn số người chia hết cho 3 và từ 6 người trở lên, 4v4 chọn đúng 8 người. Chia ngẫu nhiên cả danh sách thành đội 4 người khi số người có điểm chia hết cho 4.
             </p>
             <div class="flex flex-wrap justify-center gap-2">
               <button
@@ -726,7 +710,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { gradeScale, countByGrade, normalizeScore } from '../utils/playerGrade.js'
+import { normalizeScore } from '../utils/playerGrade.js'
 
 // Add Tailwind CSS and Open Graph meta tags
 useHead({
@@ -778,7 +762,6 @@ const lobbyPlayerNames = [
   'GT_SonBay_HaNoi',
   'anhloix4',
   'Ut_Pham_XinhDep',
-  'chemthue199x',
   'Fioruna'
 ]
 
@@ -786,7 +769,6 @@ const players = ref([])
 const teams = ref([])
 const namedPlayers = computed(() => players.value.filter(player => player && player.name))
 const rankedPlayers = computed(() => namedPlayers.value.filter(player => player.rank))
-const rosterScale = computed(() => gradeScale(rankedPlayers.value))
 const regenerateKey = ref(0)
 const activeTab = ref('teams') // Mặc định là tab "Chia Team"
 const isInitialLoad = ref(true) // Flag để kiểm tra lần load đầu tiên
