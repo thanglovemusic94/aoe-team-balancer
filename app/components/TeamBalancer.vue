@@ -147,10 +147,45 @@ const snakeTeams = (players) => {
     }
     forward = !forward
   }
+  spreadStrongPlayers(teams, Number(usable[teamCount - 1]?.rank))
   teams.forEach(team => {
     team.totalPoints = Math.round(team.totalPoints * 2) / 2
   })
   return teams
+}
+
+const spreadStrongPlayers = (teams, cutoff) => {
+  if (!Number.isFinite(cutoff)) return
+  const isStrong = (player) => Number(player.rank) >= cutoff
+  const strongCount = (team) => team.players.filter(isStrong).length
+  const retotal = (team) => {
+    team.totalPoints = team.players.reduce((sum, player) => sum + Number(player.rank), 0)
+  }
+  for (let guard = 0; guard < teams.length * 4; guard += 1) {
+    const counts = teams.map(strongCount)
+    const maxCount = Math.max(...counts)
+    const minCount = Math.min(...counts)
+    if (maxCount <= minCount + 1) return
+    const donor = teams
+      .filter(team => strongCount(team) === maxCount)
+      .sort((a, b) => Math.max(...b.players.map(player => Number(player.rank))) - Math.max(...a.players.map(player => Number(player.rank))))[0]
+    const receiver = teams
+      .filter(team => strongCount(team) === minCount)
+      .sort((a, b) => a.totalPoints - b.totalPoints)[0]
+    const give = donor.players
+      .filter(isStrong)
+      .sort((a, b) => Number(a.rank) - Number(b.rank))[0]
+    const take = receiver.players
+      .filter(player => !isStrong(player))
+      .sort((a, b) => Number(b.rank) - Number(a.rank))[0]
+    if (!give || !take) return
+    donor.players = donor.players.filter(player => player !== give)
+    receiver.players = receiver.players.filter(player => player !== take)
+    donor.players.push(take)
+    receiver.players.push(give)
+    retotal(donor)
+    retotal(receiver)
+  }
 }
 
 const generateTeams = async () => {
@@ -171,7 +206,7 @@ const generateTeams = async () => {
     if (strongest && weakest) {
       algorithmSteps.value.push(`Khỏe nhất ${strongest.name} (${strongest.rank}) đi cùng nhóm yếu nhất, yếu nhất là ${weakest.name} (${weakest.rank}).`)
     }
-    algorithmSteps.value.push(`Xếp ${teamCount} team, mỗi team 4 người.`)
+    algorithmSteps.value.push(`Xếp ${teamCount} team. Mỗi team một người điểm cao, người khỏe dư sang team yếu hơn.`)
     await sleep(300)
 
     const balancedTeams = snakeTeams(props.players)

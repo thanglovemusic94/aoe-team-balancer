@@ -75,6 +75,7 @@
                    <p class="mb-3">Khi chia team, máy so đúng điểm đang có trong danh sách:</p>
                    <ul class="list-disc pl-5 space-y-1">
                      <li>Người điểm cao đi cùng người điểm thấp.</li>
+                     <li>Mỗi team một người thuộc nhóm điểm cao. Người khỏe dư vào team đang yếu hơn.</li>
                      <li>Tổng điểm các team giữ sát nhau.</li>
                    </ul>
                    <p class="mt-3 text-sm text-gray-500">Không dùng mốc điểm cố định. Danh sách đổi điểm thì cách ghép cũng đổi.</p>
